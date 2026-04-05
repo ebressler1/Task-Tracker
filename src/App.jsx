@@ -267,6 +267,7 @@ function App() {
   const [tasks, setTasks] = useState(defaultTasks);
   const [logs, setLogs] = useState({});
   const [editingTaskId, setEditingTaskId] = useState(null);
+  const [showForm, setShowForm] = useState(false);
 
   const [customCategories, setCustomCategories] = useState([]);
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
@@ -718,10 +719,12 @@ useEffect(() => {
   const startAddTask = () => {
     setEditingTaskId(null);
     setForm(emptyForm);
+    setShowForm(true);
   };
 
   const startEditTask = (task) => {
     setEditingTaskId(task.id);
+    setShowForm(true);
     setForm({
       name: task.name,
       category: task.category,
@@ -767,11 +770,13 @@ useEffect(() => {
 
     setEditingTaskId(null);
     setForm(emptyForm);
+    setShowForm(false);
   };
 
   const cancelEdit = () => {
     setEditingTaskId(null);
     setForm(emptyForm);
+    setShowForm(false);
   };
 
   const deleteTask = (taskId) => {
@@ -825,32 +830,29 @@ useEffect(() => {
 
           <div className="top-bar-actions">
             <button
+              className={page === "activities" ? "nav-button active" : "nav-button"}
+              onClick={() => setPage("activities")}
+            >
+              Activities
+            </button>
+            <button
+              className={page === "weekly" ? "nav-button active" : "nav-button"}
+              onClick={() => setPage("weekly")}
+            >
+              Weekly Streaks
+            </button>
+            <button
+              className={page === "long" ? "nav-button active" : "nav-button"}
+              onClick={() => setPage("long")}
+            >
+              Long Streaks
+            </button>
+            <button
               className="theme-toggle"
               onClick={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}
             >
-              {theme === "light" ? "Dark mode" : "Light mode"}
+              {theme === "light" ? "Dark" : "Light"}
             </button>
-
-            <div className="nav-buttons">
-              <button
-                className={page === "activities" ? "nav-button active" : "nav-button"}
-                onClick={() => setPage("activities")}
-              >
-                Activities
-              </button>
-              <button
-                className={page === "weekly" ? "nav-button active" : "nav-button"}
-                onClick={() => setPage("weekly")}
-              >
-                Weekly Streak Tracker
-              </button>
-              <button
-                className={page === "long" ? "nav-button active" : "nav-button"}
-                onClick={() => setPage("long")}
-              >
-                Long Streak Tracker
-              </button>
-            </div>
           </div>
         </div>
 
@@ -976,94 +978,46 @@ useEffect(() => {
                           ? "Weekly Goal Possible"
                           : "Weekly Goal Missed";
 
+                      const shortStatusLabel =
+                        weeklyStatus === "green" ? "Met" :
+                        weeklyStatus === "yellow" ? "On track" : "Missed";
+
                       return (
                         <div
                           key={task.id}
                           className={`task-compact-card ${log.completed ? "is-complete" : ""}`}
                         >
-                          <div className="task-left-controls">
-                            <button
-                              className={`task-complete-button ${log.completed ? "checked" : ""}`}
-                              onClick={() => toggleComplete(task.id)}
-                              aria-label={`Complete ${task.name}`}
-                              title={`Complete ${task.name}`}
-                            >
-                              <span className="task-button-check">{log.completed ? "✓" : "○"}</span>
-                              <span className="task-button-label">Complete</span>
-                            </button>
+                          <button
+                            className={`task-complete-button ${log.completed ? "checked" : ""}`}
+                            onClick={() => toggleComplete(task.id)}
+                            title={`Mark ${task.name} complete`}
+                          >
+                            {log.completed ? "✓" : "○"}
+                          </button>
 
-                            <button
-                              className={`task-bonus-button ${log.extra ? "active" : ""}`}
-                              onClick={() => toggleExtra(task.id)}
-                              disabled={!log.completed}
-                              aria-label={`Bonus ${task.name}`}
-                              title={`Bonus ${task.name}`}
-                            >
-                              <span className="task-button-check">{log.extra ? "✓" : "+"}</span>
-                              <span className="task-button-label">Bonus</span>
-                            </button>
-                          </div>
+                          <button
+                            className={`task-bonus-button ${log.extra ? "active" : ""}`}
+                            onClick={() => toggleExtra(task.id)}
+                            disabled={!log.completed}
+                            title={`Bonus: ${task.extraThreshold}`}
+                          >
+                            {log.extra ? "★" : "☆"}
+                          </button>
 
-                          <div className="task-main">
-                            <div className="task-title-stack">
-                              <div className="task-title-row">
-                                <div className="task-name">{task.name}</div>
-                                <div className="task-goal-inline">Goal: {task.dailyGoal}</div>
-                              </div>
-                            </div>
+                          <span className="task-name">{task.name}</span>
 
-                            <div className="task-stats-row">
-                              <div className="task-points-box">
-                                <div className="task-points-label">pts today</div>
-                                <div className="task-points-value">{points}</div>
-                              </div>
+                          <span className="task-weekly-progress">
+                            {weeklyCount}<span className="task-weekly-denom">/{task.weeklyGoal}</span>
+                          </span>
 
-                              <div className="task-chip">
-                                <span className="task-chip-label">Baseline</span>
-                                <span className="task-chip-value">{task.dailyPoints}</span>
-                              </div>
+                          <span className={`status-badge ${weeklyStatus}`}>
+                            {shortStatusLabel}
+                          </span>
 
-                              <div className="task-chip">
-                                <span className="task-chip-label">Bonus</span>
-                                <span className="task-chip-value">
-                                  +{task.extraBonus} at {task.extraThreshold}
-                                </span>
-                              </div>
-
-                              <div className="task-chip">
-                                <span className="task-chip-label">Weekly</span>
-                                <span className="task-chip-value">
-                                  {weeklyCount}/{task.weeklyGoal}
-                                </span>
-                              </div>
-
-                              <div className={`status-badge ${weeklyStatus}`}>
-                                {weeklyStatusLabel}
-                              </div>
-                            </div>
-
-                            <div className="task-action-row">
-                              <button
-                                className="task-action-button subtle-button"
-                                onClick={() => startEditTask(task)}
-                              >
-                                Edit
-                              </button>
-
-                              <button
-                                className="task-action-button subtle-button"
-                                onClick={() => toggleArchived(task.id)}
-                              >
-                                Archive
-                              </button>
-
-                              <button
-                                className="task-action-button subtle-button danger-button"
-                                onClick={() => deleteTask(task.id)}
-                              >
-                                Delete
-                              </button>
-                            </div>
+                          <div className="task-action-row">
+                            <button className="task-action-mini" onClick={() => startEditTask(task)}>Edit</button>
+                            <button className="task-action-mini" onClick={() => toggleArchived(task.id)}>Archive</button>
+                            <button className="task-action-mini danger-mini" onClick={() => deleteTask(task.id)}>Delete</button>
                           </div>
                         </div>
                       );
@@ -1073,7 +1027,7 @@ useEffect(() => {
               ))}
             </div>
 
-            <div className="card">
+            {showForm && <div className="card">
               <h2>{editingTaskId ? "Edit Task" : "Add Task"}</h2>
 
               <div className="labeled-form-grid">
@@ -1206,13 +1160,11 @@ useEffect(() => {
                 <button className="small-button" onClick={saveTask}>
                   {editingTaskId ? "Save Changes" : "Add Task"}
                 </button>
-                {editingTaskId && (
-                  <button className="small-button archive-button" onClick={cancelEdit}>
-                    Cancel
-                  </button>
-                )}
+                <button className="small-button archive-button" onClick={cancelEdit}>
+                  Cancel
+                </button>
               </div>
-            </div>
+            </div>}
 
             <div className="card archived-card">
               <h2>Archived Tasks</h2>
@@ -1357,35 +1309,61 @@ useEffect(() => {
             </div>
 
             <div className="card">
-              <h2>Weekly Goal Matrix</h2>
-              <div className="matrix-scroll">
-                <table className="matrix-table">
-                  <thead>
-                    <tr>
-                      <th>Task</th>
-                      {recentWeekStarts.map((weekStart) => (
-                        <th key={weekStart}>{weekLabelFromDate(weekStart)}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activeTasks.map((task) => (
-                      <tr key={task.id}>
-                        <td>{task.name}</td>
-                        {recentWeekStarts.map((weekStart) => {
-                          const weekEnd = getWeekDates(weekStart)[6];
-                          const success =
-                            getWeeklyCompletionCount(task, weekEnd) >= task.weeklyGoal;
+              <h2>Activity Heatmap</h2>
+              {activeTasks.map((task) => (
+                <div key={task.id} className="task-heatmap">
+                  <div className="task-heatmap-title">{task.name}</div>
+                  <div className="task-heatmap-scroll">
+                    <div className="task-heatmap-wrap">
+                      <div className="heatmap-month-row">
+                        <div className="heatmap-day-spacer" />
+                        {recentWeekStarts.map((weekStart, i) => {
+                          const d = new Date(weekStart + "T12:00:00");
+                          const prev = i > 0 ? new Date(recentWeekStarts[i - 1] + "T12:00:00") : null;
+                          const showMonth = !prev || d.getMonth() !== prev.getMonth();
                           return (
-                            <td key={weekStart}>
-                              <div className={success ? "matrix-cell green" : "matrix-cell red"} />
-                            </td>
+                            <div key={weekStart} className="heatmap-month-slot">
+                              {showMonth ? d.toLocaleDateString(undefined, { month: "short" }) : ""}
+                            </div>
                           );
                         })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                      </div>
+                      <div className="task-heatmap-grid">
+                        <div className="heatmap-day-labels">
+                          {["Mon", "", "Wed", "", "Fri", "", "Sun"].map((label, i) => (
+                            <div key={i} className="heatmap-day-label">{label}</div>
+                          ))}
+                        </div>
+                        {recentWeekStarts.map((weekStart) => {
+                          const dates = getWeekDates(weekStart);
+                          return (
+                            <div key={weekStart} className="heatmap-week-col">
+                              {dates.map((date) => {
+                                const isFuture = date > todayString();
+                                const log = isFuture ? { completed: false, extra: false } : getTaskLog(task.id, date);
+                                const level = isFuture ? 0 : log.completed ? 4 : 0;
+                                const label = isFuture ? "" : log.completed ? `✓${log.extra ? " + bonus" : ""}` : "—";
+                                return (
+                                  <div
+                                    key={date}
+                                    className={`heatmap-cell level-${level}${isFuture ? " heatmap-future" : ""}`}
+                                    title={`${date}: ${isFuture ? "future" : label}`}
+                                  />
+                                );
+                              })}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div className="heatmap-legend">
+                <span className="heatmap-legend-text">Not done</span>
+                <div className="heatmap-cell level-0" />
+                <div className="heatmap-cell level-4" />
+                <span className="heatmap-legend-text">Done</span>
               </div>
             </div>
 
