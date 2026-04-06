@@ -1,4 +1,5 @@
-import { useEffect, useRef, useMemo, useState } from "react";
+import { useEffect, useRef, useMemo, useState, useCallback } from "react";
+import confetti from "canvas-confetti";
 import {
   LineChart,
   Line,
@@ -229,6 +230,50 @@ function buildCumulativeWeekData(activeTasks, tasks, logs, weekStart) {
 }
 
 
+const LEVELS = [
+  { level: 1,  name: "Newcomer",     points: 0,     weeks: 0  },
+  { level: 2,  name: "Beginner",     points: 75,    weeks: 1  },
+  { level: 3,  name: "Learning",     points: 200,   weeks: 2  },
+  { level: 4,  name: "Developing",   points: 400,   weeks: 3  },
+  { level: 5,  name: "Committed",    points: 650,   weeks: 5  },
+  { level: 6,  name: "Consistent",   points: 950,   weeks: 7  },
+  { level: 7,  name: "Dedicated",    points: 1350,  weeks: 10 },
+  { level: 8,  name: "Focused",      points: 1850,  weeks: 13 },
+  { level: 9,  name: "Disciplined",  points: 2500,  weeks: 17 },
+  { level: 10, name: "Driven",       points: 3300,  weeks: 21 },
+  { level: 11, name: "Persistent",   points: 4300,  weeks: 25 },
+  { level: 12, name: "Resilient",    points: 5500,  weeks: 29 },
+  { level: 13, name: "Seasoned",     points: 7000,  weeks: 33 },
+  { level: 14, name: "Accomplished", points: 8800,  weeks: 37 },
+  { level: 15, name: "Expert",       points: 11000, weeks: 40 },
+  { level: 16, name: "Master",       points: 13500, weeks: 43 },
+  { level: 17, name: "Elite",        points: 16500, weeks: 46 },
+  { level: 18, name: "Champion",     points: 20000, weeks: 48 },
+  { level: 19, name: "Legend",       points: 24500, weeks: 50 },
+  { level: 20, name: "Transcendent", points: 30000, weeks: 52 },
+];
+
+const BADGES = [
+  { id: "first_task",   icon: "🎯", name: "First Step",        desc: "Complete your first task"                  },
+  { id: "streak_7",     icon: "📈", name: "On a Roll",         desc: "7-day streak on any task"                  },
+  { id: "streak_30",    icon: "💪", name: "Iron Discipline",   desc: "30-day streak on any task"                 },
+  { id: "streak_90",    icon: "🔩", name: "Iron Will",         desc: "90-day streak on any task"                 },
+  { id: "pts_100",      icon: "💯", name: "Century Club",      desc: "Earn 100 lifetime points"                  },
+  { id: "pts_500",      icon: "⚡", name: "Point Collector",   desc: "Earn 500 lifetime points"                  },
+  { id: "pts_2000",     icon: "🔥", name: "Point Machine",     desc: "Earn 2,000 lifetime points"                },
+  { id: "pts_10000",    icon: "💎", name: "Point Master",      desc: "Earn 10,000 lifetime points"               },
+  { id: "perfect_week", icon: "⭐", name: "Week Warrior",      desc: "Complete one perfect baseline week"        },
+  { id: "perfect_4w",   icon: "🌟", name: "Monthly Momentum",  desc: "4 perfect baseline weeks"                  },
+  { id: "perfect_13w",  icon: "📅", name: "Quarter Strong",    desc: "13 perfect baseline weeks"                 },
+  { id: "perfect_26w",  icon: "🗓️", name: "Half Year Hero",   desc: "26 perfect baseline weeks"                 },
+  { id: "perfect_52w",  icon: "👑", name: "Full Year",         desc: "52 perfect baseline weeks"                 },
+  { id: "all_tasks_day",icon: "✨", name: "Full House",        desc: "Complete every active task in one day"     },
+  { id: "bonus_10",     icon: "🎁", name: "Bonus Hunter",      desc: "Earn bonus points 10 times"                },
+  { id: "freeze_used",  icon: "🛡️", name: "Grace Day",        desc: "Use a streak freeze for the first time"    },
+  { id: "level_10",     icon: "🏅", name: "Halfway There",     desc: "Reach level 10"                            },
+  { id: "level_20",     icon: "🌈", name: "Transcendent",      desc: "Reach max level 20"                        },
+];
+
 function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -246,6 +291,14 @@ function App() {
   const [customCategories, setCustomCategories] = useState([]);
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
   const [newCategory, setNewCategory] = useState("");
+
+  const [earnedBadges, setEarnedBadges] = useState({});
+  const [streakFreezes, setStreakFreezes] = useState(0);
+  const [usedFreezes, setUsedFreezes] = useState({});
+  const [awardedFreezeWeeks, setAwardedFreezeWeeks] = useState([]);
+  const [personalRecords, setPersonalRecords] = useState({ bestDayPoints: 0, bestWeekPoints: 0, longestStreak: 0 });
+  const [completingTaskId, setCompletingTaskId] = useState(null);
+  const [completingPoints, setCompletingPoints] = useState(0);
 
 
   const emptyForm = {
@@ -298,6 +351,11 @@ function App() {
         if (data.logs) setLogs(data.logs);
         if (data.customCategories) setCustomCategories(data.customCategories);
         if (data.theme) setTheme(data.theme);
+        if (data.earnedBadges) setEarnedBadges(data.earnedBadges);
+        if (data.streakFreezes != null) setStreakFreezes(data.streakFreezes);
+        if (data.usedFreezes) setUsedFreezes(data.usedFreezes);
+        if (data.awardedFreezeWeeks) setAwardedFreezeWeeks(data.awardedFreezeWeeks);
+        if (data.personalRecords) setPersonalRecords(data.personalRecords);
       } else {
         setTasks(defaultTasks);
       }
@@ -333,6 +391,21 @@ function App() {
     if (!user || !dataLoaded.current) return;
     setDoc(doc(db, "users", user.uid), { theme }, { merge: true });
   }, [theme]);
+
+  useEffect(() => {
+    if (!user || !dataLoaded.current) return;
+    setDoc(doc(db, "users", user.uid), { earnedBadges }, { merge: true });
+  }, [earnedBadges]);
+
+  useEffect(() => {
+    if (!user || !dataLoaded.current) return;
+    setDoc(doc(db, "users", user.uid), { streakFreezes, usedFreezes, awardedFreezeWeeks }, { merge: true });
+  }, [streakFreezes, usedFreezes, awardedFreezeWeeks]);
+
+  useEffect(() => {
+    if (!user || !dataLoaded.current) return;
+    setDoc(doc(db, "users", user.uid), { personalRecords }, { merge: true });
+  }, [personalRecords]);
 
   const activeTasks = tasks.filter((task) => task.active);
   const archivedTasks = tasks.filter((task) => !task.active);
@@ -702,6 +775,138 @@ function App() {
     });
   }, [recentWeekStarts, activeTasks, tasks, logs]);
 
+  // ── New computed values ──────────────────────────────────────────────────
+
+  const lifetimePoints = useMemo(() => {
+    let total = 0;
+    Object.entries(logs).forEach(([, dayLog]) => {
+      tasks.forEach((task) => {
+        const log = dayLog?.[task.id];
+        if (log?.completed) total += task.dailyPoints + (log.extra ? task.extraBonus : 0);
+      });
+    });
+    return total;
+  }, [tasks, logs]);
+
+  const totalPerfectWeeks = useMemo(() => {
+    if (activeTasks.length === 0) return 0;
+    let count = 0;
+    recentWeekStarts.forEach((weekStart) => {
+      if (weekStart >= currentWeekStart) return; // skip current unfinished week
+      const weekEnd = getWeekDates(weekStart)[6];
+      if (isWeeklyPerfect(weekEnd)) count++;
+    });
+    return count;
+  }, [activeTasks, tasks, logs, recentWeekStarts, currentWeekStart]);
+
+  const currentLevelData = useMemo(() => {
+    let cur = LEVELS[0];
+    for (const lvl of LEVELS) {
+      if (lifetimePoints >= lvl.points && totalPerfectWeeks >= lvl.weeks) cur = lvl;
+      else break;
+    }
+    return cur;
+  }, [lifetimePoints, totalPerfectWeeks]);
+
+  const nextLevelData = useMemo(() => {
+    const idx = LEVELS.findIndex((l) => l.level === currentLevelData.level);
+    return idx < LEVELS.length - 1 ? LEVELS[idx + 1] : null;
+  }, [currentLevelData]);
+
+  const totalBonusEarned = useMemo(() => {
+    let count = 0;
+    Object.values(logs).forEach((dayLog) => {
+      tasks.forEach((task) => {
+        if (dayLog?.[task.id]?.extra) count++;
+      });
+    });
+    return count;
+  }, [tasks, logs]);
+
+  // Streak per task, accounting for used freezes
+  const getTaskDailyStreak = useCallback((taskId, asOfDate) => {
+    let streak = 0;
+    for (let i = 0; i < 500; i++) {
+      const d = shiftDate(asOfDate, -i);
+      const log = getTaskLog(taskId, d);
+      const frozen = (usedFreezes[taskId] || []).includes(d);
+      if (log.completed || frozen) streak++;
+      else break;
+    }
+    return streak;
+  }, [logs, tasks, usedFreezes]);
+
+  const maxTaskStreak = useMemo(() => {
+    return activeTasks.reduce((max, task) => Math.max(max, getTaskDailyStreak(task.id, todayString())), 0);
+  }, [activeTasks, getTaskDailyStreak]);
+
+  // Award freeze when current week becomes perfect
+  useEffect(() => {
+    if (!user || !dataLoaded.current || activeTasks.length === 0) return;
+    const weekEnd = getWeekDates(currentWeekStart)[6];
+    if (isWeeklyPerfect(weekEnd) && !awardedFreezeWeeks.includes(currentWeekStart)) {
+      setStreakFreezes((prev) => Math.min(prev + 1, 3));
+      setAwardedFreezeWeeks((prev) => [...prev, currentWeekStart]);
+    }
+  }, [logs]);
+
+  // Check & award badges whenever key metrics change
+  useEffect(() => {
+    if (!user || !dataLoaded.current) return;
+    const today = todayString();
+    const allTasksCompletedToday = activeTasks.length > 0 && activeTasks.every((t) => getTaskLog(t.id, today).completed);
+    const newBadges = {};
+    const earn = (id) => { if (!earnedBadges[id]) newBadges[id] = today; };
+    const totalCompletions = Object.values(logs).reduce((sum, d) => sum + Object.values(d || {}).filter((l) => l?.completed).length, 0);
+    if (totalCompletions >= 1) earn("first_task");
+    if (maxTaskStreak >= 7) earn("streak_7");
+    if (maxTaskStreak >= 30) earn("streak_30");
+    if (maxTaskStreak >= 90) earn("streak_90");
+    if (lifetimePoints >= 100) earn("pts_100");
+    if (lifetimePoints >= 500) earn("pts_500");
+    if (lifetimePoints >= 2000) earn("pts_2000");
+    if (lifetimePoints >= 10000) earn("pts_10000");
+    if (totalPerfectWeeks >= 1) earn("perfect_week");
+    if (totalPerfectWeeks >= 4) earn("perfect_4w");
+    if (totalPerfectWeeks >= 13) earn("perfect_13w");
+    if (totalPerfectWeeks >= 26) earn("perfect_26w");
+    if (totalPerfectWeeks >= 52) earn("perfect_52w");
+    if (allTasksCompletedToday) earn("all_tasks_day");
+    if (totalBonusEarned >= 10) earn("bonus_10");
+    if (currentLevelData.level >= 10) earn("level_10");
+    if (currentLevelData.level >= 20) earn("level_20");
+    if (Object.keys(newBadges).length > 0) setEarnedBadges((prev) => ({ ...prev, ...newBadges }));
+  }, [logs, lifetimePoints, totalPerfectWeeks, maxTaskStreak, totalBonusEarned, currentLevelData]);
+
+  // Update personal records
+  useEffect(() => {
+    if (!user || !dataLoaded.current || activeTasks.length === 0) return;
+    const today = todayString();
+    const todayPts = activeTasks.reduce((sum, task) => {
+      const log = getTaskLog(task.id, today);
+      return sum + (log.completed ? task.dailyPoints + (log.extra ? task.extraBonus : 0) : 0);
+    }, 0);
+    const curStreak = maxTaskStreak;
+    setPersonalRecords((prev) => {
+      const updated = {
+        bestDayPoints: Math.max(prev.bestDayPoints || 0, todayPts),
+        bestWeekPoints: Math.max(prev.bestWeekPoints || 0, getWeekTotalPoints(activeTasks, tasks, logs, currentWeekStart)),
+        longestStreak: Math.max(prev.longestStreak || 0, curStreak),
+      };
+      if (JSON.stringify(updated) === JSON.stringify(prev)) return prev;
+      return updated;
+    });
+  }, [logs, maxTaskStreak]);
+
+  const applyFreeze = (taskId) => {
+    const yesterday = shiftDate(todayString(), -1);
+    if (streakFreezes <= 0) return;
+    if ((usedFreezes[taskId] || []).includes(yesterday)) return;
+    setUsedFreezes((prev) => ({ ...prev, [taskId]: [...(prev[taskId] || []), yesterday] }));
+    setStreakFreezes((prev) => prev - 1);
+    setEarnedBadges((prev) => prev.freeze_used ? prev : { ...prev, freeze_used: todayString() });
+  };
+
   const startAddTask = () => {
     setEditingTaskId(null);
     setForm(emptyForm);
@@ -793,6 +998,22 @@ function App() {
     const current = getTaskLog(taskId, selectedDate);
     const nextCompleted = !current.completed;
 
+    if (nextCompleted) {
+      const task = tasks.find((t) => t.id === taskId);
+      const pts = task ? task.dailyPoints + (current.extra ? task.extraBonus : 0) : 0;
+      setCompletingTaskId(taskId);
+      setCompletingPoints(pts);
+      setTimeout(() => setCompletingTaskId(null), 900);
+
+      // Confetti when weekly goal is newly hit
+      if (task) {
+        const countBefore = getWeeklyCompletionCount(task, selectedDate);
+        if (countBefore + 1 === task.weeklyGoal) {
+          confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 }, colors: ["#769fb6", "#188fa7", "#9dbbae", "#e2dbbe"] });
+        }
+      }
+    }
+
     updateTaskLog(taskId, selectedDate, {
       completed: nextCompleted,
       extra: nextCompleted ? current.extra : false,
@@ -881,7 +1102,7 @@ function App() {
               className={page === "long" ? "nav-button active" : "nav-button"}
               onClick={() => setPage("long")}
             >
-              Long Streaks
+              Longterm
             </button>
             <button
               className="theme-toggle"
@@ -1067,13 +1288,18 @@ function App() {
                         <div
                           className={`task-compact-card ${log.completed ? "is-complete" : ""}`}
                         >
-                          <button
-                            className={`task-complete-button ${log.completed ? "checked" : ""}`}
-                            onClick={() => toggleComplete(task.id)}
-                            title={`Mark ${task.name} complete`}
-                          >
-                            {log.completed ? "✓" : "○"}
-                          </button>
+                          <div className="task-complete-wrap">
+                            <button
+                              className={`task-complete-button ${log.completed ? "checked" : ""} ${completingTaskId === task.id ? "completing" : ""}`}
+                              onClick={() => toggleComplete(task.id)}
+                              title={`Mark ${task.name} complete`}
+                            >
+                              {log.completed ? "✓" : "○"}
+                            </button>
+                            {completingTaskId === task.id && (
+                              <span className="points-float">+{completingPoints}</span>
+                            )}
+                          </div>
 
                           <button
                             className={`task-bonus-button ${log.extra ? "active" : ""}`}
@@ -1085,6 +1311,19 @@ function App() {
                           </button>
 
                           <span className="task-name">{task.name}</span>
+
+                          {(() => {
+                            const streak = getTaskDailyStreak(task.id, selectedDate);
+                            const yesterday = shiftDate(selectedDate, -1);
+                            const yesterdayLog = getTaskLog(task.id, yesterday);
+                            const canFreeze = streakFreezes > 0 && !log.completed && !yesterdayLog.completed && streak === 0 && getTaskDailyStreak(task.id, shiftDate(selectedDate, -2)) > 0 && !(usedFreezes[task.id] || []).includes(yesterday);
+                            return (
+                              <span className="task-streak-wrap">
+                                {streak > 0 && <span className="task-streak">{streak}d</span>}
+                                {canFreeze && <button className="freeze-btn" onClick={() => applyFreeze(task.id)} title={`Use freeze (${streakFreezes} left)`}>🛡 Freeze</button>}
+                              </span>
+                            );
+                          })()}
 
                           <span className="task-goal-info">
                             {task.dailyGoal && <span>Goal: {task.dailyGoal}</span>}
@@ -1285,6 +1524,93 @@ function App() {
 
         {page === "long" && (
           <>
+            {/* Level card */}
+            <div className="card level-card">
+              <div className="level-header">
+                <div>
+                  <div className="level-badge">Level {currentLevelData.level}</div>
+                  <div className="level-name">{currentLevelData.name}</div>
+                </div>
+                {nextLevelData && (
+                  <div className="level-next">Next: <strong>Lv.{nextLevelData.level} {nextLevelData.name}</strong></div>
+                )}
+              </div>
+              {nextLevelData ? (
+                <div className="level-progress-rows">
+                  <div className="level-progress-row">
+                    <span className="level-progress-label">Points</span>
+                    <div className="level-progress-bar-wrap">
+                      <div className="level-progress-bar" style={{ width: `${Math.min(100, ((lifetimePoints - currentLevelData.points) / (nextLevelData.points - currentLevelData.points)) * 100)}%` }} />
+                    </div>
+                    <span className="level-progress-value">{lifetimePoints.toLocaleString()} / {nextLevelData.points.toLocaleString()}</span>
+                  </div>
+                  <div className="level-progress-row">
+                    <span className="level-progress-label">Perfect weeks</span>
+                    <div className="level-progress-bar-wrap">
+                      <div className="level-progress-bar" style={{ width: `${Math.min(100, ((totalPerfectWeeks - currentLevelData.weeks) / (nextLevelData.weeks - currentLevelData.weeks || 1)) * 100)}%` }} />
+                    </div>
+                    <span className="level-progress-value">{totalPerfectWeeks} / {nextLevelData.weeks}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="level-max-text">Max level reached. You are Transcendent.</div>
+              )}
+            </div>
+
+            {/* Personal Records + Streaks + Freezes row */}
+            <div className="stats-grid stats-grid-three">
+              <div className="card stat-card">
+                <div className="stat-label">Best Day</div>
+                <div className="stat-value">{personalRecords.bestDayPoints}</div>
+                <div className="stat-subvalue">points in one day</div>
+              </div>
+              <div className="card stat-card">
+                <div className="stat-label">Best Week</div>
+                <div className="stat-value">{personalRecords.bestWeekPoints}</div>
+                <div className="stat-subvalue">points in one week</div>
+              </div>
+              <div className="card stat-card">
+                <div className="stat-label">Longest Streak</div>
+                <div className="stat-value">{personalRecords.longestStreak}</div>
+                <div className="stat-subvalue">consecutive days</div>
+              </div>
+            </div>
+
+            {/* Streak freezes */}
+            <div className="card freeze-card">
+              <div className="freeze-header">
+                <div>
+                  <h2 style={{margin:0}}>Streak Freezes</h2>
+                  <div className="section-subtitle">Earned by completing perfect weeks. Max 3 held at a time.</div>
+                </div>
+                <div className="freeze-count">
+                  {[0,1,2].map(i => (
+                    <span key={i} className={`freeze-pip ${i < streakFreezes ? "active" : ""}`}>🛡</span>
+                  ))}
+                  <span className="freeze-count-label">{streakFreezes}/3</span>
+                </div>
+              </div>
+              <div className="section-subtitle" style={{marginTop:8}}>Use a freeze on a task card when you miss a day to protect your streak.</div>
+            </div>
+
+            {/* Badges */}
+            <div className="card">
+              <h2>Badges</h2>
+              <div className="badges-grid">
+                {BADGES.map((badge) => {
+                  const earned = earnedBadges[badge.id];
+                  return (
+                    <div key={badge.id} className={`badge-card ${earned ? "earned" : "locked"}`} title={earned ? `Earned ${earned}` : "Locked"}>
+                      <div className="badge-icon">{earned ? badge.icon : "🔒"}</div>
+                      <div className="badge-name">{badge.name}</div>
+                      <div className="badge-desc">{badge.desc}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Streaks */}
             <div className="stats-grid stats-grid-three">
               <div className="card stat-card">
                 <div className="stat-label">Activity Streak</div>
