@@ -1187,9 +1187,33 @@ body.theme-dark .task-form-inline {
     align-items: stretch;
   }
 
+  /* Nav: 3-column grid → row 1: Activities/Weekly/Long, row 2: Dark+SignOut right-aligned */
+  .top-bar-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+  }
+
+  .top-bar-actions > button:nth-child(4) {
+    grid-column: 2;
+  }
+
+  .top-bar-actions > button:nth-child(5) {
+    grid-column: 3;
+  }
+
+  .nav-button,
+  .theme-toggle {
+    padding: 9px 8px;
+    font-size: 13px;
+    text-align: center;
+  }
+
+  /* Date strip: keep arrows bottom-aligned with the input, no wrapping */
   .date-strip {
-    align-items: center;
-    flex-wrap: wrap;
+    align-items: flex-end;
+    flex-wrap: nowrap;
   }
 }
 
