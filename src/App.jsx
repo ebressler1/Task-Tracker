@@ -19,7 +19,10 @@ const PACIFIC_CYAN = "#188fa7";
 const MUTED_TEAL = "#9dbbae";
 import "./App.css";
 
-const todayString = () => new Date().toISOString().slice(0, 10);
+const todayString = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
 
 const DEFAULT_CATEGORIES = [
   "Fitness",
