@@ -228,44 +228,6 @@ function buildCumulativeWeekData(activeTasks, tasks, logs, weekStart) {
   });
 }
 
-function generateDemoLogs(tasks) {
-  const logs = {};
-  const today = new Date();
-  const start = new Date();
-  start.setDate(today.getDate() - 89);
-
-  const taskMap = Object.fromEntries(tasks.map((task) => [task.name, task.id]));
-
-  for (let d = new Date(start); d <= today; d.setDate(d.getDate() + 1)) {
-    const dateKey = d.toISOString().slice(0, 10);
-    const day = d.getDay(); // 0 Sun ... 6 Sat
-
-    logs[dateKey] = {};
-
-    const maybeComplete = (taskName, completedChance, extraChance = 0) => {
-      const taskId = taskMap[taskName];
-      if (!taskId) return;
-
-      const completed = Math.random() < completedChance;
-      const extra = completed && Math.random() < extraChance;
-
-      logs[dateKey][taskId] = {
-        completed,
-        extra,
-      };
-    };
-
-    maybeComplete("Workout", [1, 3, 5].includes(day) ? 0.85 : 0.2, 0.25);
-    maybeComplete("Anki", day === 0 ? 0.55 : 0.88, 0.2);
-    maybeComplete("Case prep", [1, 2, 3, 4, 5].includes(day) ? 0.8 : 0.15, 0.2);
-    maybeComplete("Call Mom", [0, 3].includes(day) ? 0.55 : 0.08, 0.05);
-    maybeComplete("Cat litter", [1, 2, 4, 6].includes(day) ? 0.75 : 0.25, 0.1);
-    maybeComplete("Spanish", [1, 2, 3, 4, 6].includes(day) ? 0.7 : 0.2, 0.15);
-    maybeComplete("Laundry", [3, 6].includes(day) ? 0.65 : 0.05, 0.1);
-  }
-
-  return logs;
-}
 
 function App() {
   const [user, setUser] = useState(null);
@@ -285,11 +247,6 @@ function App() {
   const [showCustomCategoryInput, setShowCustomCategoryInput] = useState(false);
   const [newCategory, setNewCategory] = useState("");
 
-  const seedDemoData = () => {
-  setTasks(defaultTasks);
-  setLogs(generateDemoLogs(defaultTasks));
-  setSelectedDate(todayString());
-};
 
   const emptyForm = {
     name: "",
@@ -1011,10 +968,7 @@ function App() {
                 </div>
 
                 <div className="task-controls">
-                  <button className="small-button secondary-button" onClick={seedDemoData}>
-                    Seed 3 Months Demo Data
-                  </button>
-                  <button className="small-button" onClick={startAddTask}>
+<button className="small-button" onClick={startAddTask}>
                     New Task
                   </button>
                 </div>
