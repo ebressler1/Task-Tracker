@@ -1086,6 +1086,11 @@ function App() {
 
                           <span className="task-name">{task.name}</span>
 
+                          <span className="task-goal-info">
+                            {task.dailyGoal && <span>Goal: {task.dailyGoal}</span>}
+                            {task.extraThreshold && <span>Bonus: {task.extraThreshold}</span>}
+                          </span>
+
                           <span className="task-weekly-progress">
                             {weeklyCount}<span className="task-weekly-denom">/{task.weeklyGoal}</span>
                           </span>
