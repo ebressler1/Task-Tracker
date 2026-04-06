@@ -230,31 +230,32 @@ function buildCumulativeWeekData(activeTasks, tasks, logs, weekStart) {
 }
 
 
-// Each level requires ALL THREE thresholds simultaneously:
-//   lifetimePts  — total points ever earned
-//   recentPts    — points earned in the last 90 days (requires sustained multi-task activity)
-//   perfectPct   — % of past weeks that were perfect (0-100); ignored until ≥2 tracked weeks
+// Each level requires ALL FOUR thresholds simultaneously:
+//   lifetimePts  — total points ever earned (top: 100,000)
+//   recentPts    — points in the last 90 days (top: 10,000; requires sustained multi-task activity)
+//   perfectWeeks — lifetime count of perfect weeks (top: 100 ≈ 2 years of consistency)
+//   perfectPct   — % of past weeks that were perfect (top: 90%; ignored until ≥2 tracked weeks)
 const LEVELS = [
-  { level: 1,  name: "Newcomer",     lifetimePts: 0,      recentPts: 0,    perfectPct: 0  },
-  { level: 2,  name: "Beginner",     lifetimePts: 40,     recentPts: 15,   perfectPct: 25 },
-  { level: 3,  name: "Learning",     lifetimePts: 120,    recentPts: 45,   perfectPct: 35 },
-  { level: 4,  name: "Developing",   lifetimePts: 280,    recentPts: 90,   perfectPct: 42 },
-  { level: 5,  name: "Committed",    lifetimePts: 500,    recentPts: 145,  perfectPct: 48 },
-  { level: 6,  name: "Consistent",   lifetimePts: 800,    recentPts: 205,  perfectPct: 52 },
-  { level: 7,  name: "Dedicated",    lifetimePts: 1200,   recentPts: 270,  perfectPct: 56 },
-  { level: 8,  name: "Focused",      lifetimePts: 1750,   recentPts: 340,  perfectPct: 59 },
-  { level: 9,  name: "Disciplined",  lifetimePts: 2500,   recentPts: 420,  perfectPct: 62 },
-  { level: 10, name: "Driven",       lifetimePts: 3500,   recentPts: 510,  perfectPct: 65 },
-  { level: 11, name: "Persistent",   lifetimePts: 5000,   recentPts: 600,  perfectPct: 67 },
-  { level: 12, name: "Resilient",    lifetimePts: 7000,   recentPts: 700,  perfectPct: 69 },
-  { level: 13, name: "Seasoned",     lifetimePts: 9500,   recentPts: 800,  perfectPct: 71 },
-  { level: 14, name: "Accomplished", lifetimePts: 12500,  recentPts: 900,  perfectPct: 73 },
-  { level: 15, name: "Expert",       lifetimePts: 16000,  recentPts: 1000, perfectPct: 75 },
-  { level: 16, name: "Master",       lifetimePts: 20500,  recentPts: 1090, perfectPct: 78 },
-  { level: 17, name: "Elite",        lifetimePts: 26000,  recentPts: 1175, perfectPct: 81 },
-  { level: 18, name: "Champion",     lifetimePts: 32500,  recentPts: 1260, perfectPct: 84 },
-  { level: 19, name: "Legend",       lifetimePts: 40000,  recentPts: 1340, perfectPct: 87 },
-  { level: 20, name: "Transcendent", lifetimePts: 50000,  recentPts: 1400, perfectPct: 90 },
+  { level: 1,  name: "Newcomer",     lifetimePts: 0,       recentPts: 0,      perfectWeeks: 0,   perfectPct: 0  },
+  { level: 2,  name: "Beginner",     lifetimePts: 100,     recentPts: 50,     perfectWeeks: 1,   perfectPct: 25 },
+  { level: 3,  name: "Learning",     lifetimePts: 300,     recentPts: 150,    perfectWeeks: 3,   perfectPct: 35 },
+  { level: 4,  name: "Developing",   lifetimePts: 700,     recentPts: 300,    perfectWeeks: 5,   perfectPct: 42 },
+  { level: 5,  name: "Committed",    lifetimePts: 1300,    recentPts: 550,    perfectWeeks: 8,   perfectPct: 48 },
+  { level: 6,  name: "Consistent",   lifetimePts: 2200,    recentPts: 850,    perfectWeeks: 12,  perfectPct: 52 },
+  { level: 7,  name: "Dedicated",    lifetimePts: 3500,    recentPts: 1200,   perfectWeeks: 17,  perfectPct: 56 },
+  { level: 8,  name: "Focused",      lifetimePts: 5200,    recentPts: 1650,   perfectWeeks: 22,  perfectPct: 59 },
+  { level: 9,  name: "Disciplined",  lifetimePts: 7500,    recentPts: 2200,   perfectWeeks: 28,  perfectPct: 62 },
+  { level: 10, name: "Driven",       lifetimePts: 11000,   recentPts: 2900,   perfectWeeks: 35,  perfectPct: 65 },
+  { level: 11, name: "Persistent",   lifetimePts: 16000,   recentPts: 3700,   perfectWeeks: 43,  perfectPct: 67 },
+  { level: 12, name: "Resilient",    lifetimePts: 23000,   recentPts: 4600,   perfectWeeks: 52,  perfectPct: 69 },
+  { level: 13, name: "Seasoned",     lifetimePts: 32000,   recentPts: 5600,   perfectWeeks: 61,  perfectPct: 71 },
+  { level: 14, name: "Accomplished", lifetimePts: 44000,   recentPts: 6600,   perfectWeeks: 70,  perfectPct: 73 },
+  { level: 15, name: "Expert",       lifetimePts: 57000,   recentPts: 7500,   perfectWeeks: 78,  perfectPct: 75 },
+  { level: 16, name: "Master",       lifetimePts: 68000,   recentPts: 8200,   perfectWeeks: 85,  perfectPct: 78 },
+  { level: 17, name: "Elite",        lifetimePts: 78000,   recentPts: 8700,   perfectWeeks: 90,  perfectPct: 81 },
+  { level: 18, name: "Champion",     lifetimePts: 87000,   recentPts: 9200,   perfectWeeks: 94,  perfectPct: 84 },
+  { level: 19, name: "Legend",       lifetimePts: 94000,   recentPts: 9600,   perfectWeeks: 97,  perfectPct: 87 },
+  { level: 20, name: "Transcendent", lifetimePts: 100000,  recentPts: 10000,  perfectWeeks: 100, perfectPct: 90 },
 ];
 
 const BADGES = [
@@ -837,12 +838,13 @@ function App() {
       if (
         lifetimePoints >= lvl.lifetimePts &&
         recentPoints >= lvl.recentPts &&
+        totalPerfectWeeks >= lvl.perfectWeeks &&
         perfectWeekPct >= lvl.perfectPct
       ) cur = lvl;
       else break;
     }
     return cur;
-  }, [lifetimePoints, recentPoints, perfectWeekPct]);
+  }, [lifetimePoints, recentPoints, totalPerfectWeeks, perfectWeekPct]);
 
   const nextLevelData = useMemo(() => {
     const idx = LEVELS.findIndex((l) => l.level === currentLevelData.level);
@@ -1587,6 +1589,15 @@ function App() {
                     </div>
                     <span className="level-progress-value">{recentPoints.toLocaleString()} / {nextLevelData.recentPts.toLocaleString()}</span>
                   </div>
+                  {nextLevelData.perfectWeeks > 0 && (
+                    <div className="level-progress-row">
+                      <span className="level-progress-label">Perfect weeks</span>
+                      <div className="level-progress-bar-wrap">
+                        <div className="level-progress-bar" style={{ width: `${Math.min(100, ((totalPerfectWeeks - currentLevelData.perfectWeeks) / Math.max(1, nextLevelData.perfectWeeks - currentLevelData.perfectWeeks)) * 100)}%` }} />
+                      </div>
+                      <span className="level-progress-value">{totalPerfectWeeks} / {nextLevelData.perfectWeeks}</span>
+                    </div>
+                  )}
                   {nextLevelData.perfectPct > 0 && (
                     <div className="level-progress-row">
                       <span className="level-progress-label">Perfect wk %</span>
