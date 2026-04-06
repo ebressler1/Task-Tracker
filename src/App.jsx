@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import {
   LineChart,
   Line,
@@ -10,13 +10,15 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { auth, googleProvider, db } from "./firebase";
 
 const STEEL_BLUE = "#769fb6";
 const PACIFIC_CYAN = "#188fa7";
 const MUTED_TEAL = "#9dbbae";
 import "./App.css";
 
-const CATEGORY_STORAGE_KEY = "achievement_categories";
 const todayString = () => new Date().toISOString().slice(0, 10);
 
 const DEFAULT_CATEGORIES = [
@@ -28,8 +30,6 @@ const DEFAULT_CATEGORIES = [
   "Self-Improvement/Skills",
 ];
 
-const TASKS_STORAGE_KEY = "achievement_tasks";
-const LOGS_STORAGE_KEY = "achievement_logs";
 
 const defaultTasks = [
   {
@@ -265,12 +265,15 @@ function generateDemoLogs(tasks) {
 }
 
 function App() {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
+  const dataLoaded = useRef(false);
+
   const [page, setPage] = useState("activities");
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("achievement_theme") || "light";
-  });
+  const [theme, setTheme] = useState("light");
   const [selectedDate, setSelectedDate] = useState(todayString());
-  const [tasks, setTasks] = useState(defaultTasks);
+  const [tasks, setTasks] = useState([]);
   const [logs, setLogs] = useState({});
   const [editingTaskId, setEditingTaskId] = useState(null);
   const [showForm, setShowForm] = useState(false);
@@ -298,61 +301,78 @@ function App() {
 
   const [form, setForm] = useState(emptyForm);
 
+  // Auth state listener
   useEffect(() => {
-  const savedTasks =
-    localStorage.getItem(TASKS_STORAGE_KEY) ??
-    localStorage.getItem("achievement_tasks_v5");
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      setUser(firebaseUser);
+      setAuthLoading(false);
+      if (!firebaseUser) dataLoaded.current = false;
+    });
+    return unsubscribe;
+  }, []);
 
-  const savedLogs =
-    localStorage.getItem(LOGS_STORAGE_KEY) ??
-    localStorage.getItem("achievement_logs_v5");
+  // Load data from Firestore when user logs in
+  useEffect(() => {
+    if (!user) return;
+    setDataLoading(true);
+    const load = async () => {
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists()) {
+        const data = snap.data();
+        if (data.tasks) {
+          setTasks(data.tasks.map((task) => ({
+            id: task.id ?? Date.now() + Math.random(),
+            name: task.name ?? "",
+            category: task.category ?? "",
+            dailyGoal: task.dailyGoal ?? "",
+            dailyPoints: task.dailyPoints ?? 0,
+            extraThreshold: task.extraThreshold ?? "",
+            extraBonus: task.extraBonus ?? 0,
+            weeklyGoal: task.weeklyGoal ?? 0,
+            weeklyBonus: task.weeklyBonus ?? 0,
+            active: task.active ?? true,
+          })));
+        } else {
+          setTasks(defaultTasks);
+        }
+        if (data.logs) setLogs(data.logs);
+        if (data.customCategories) setCustomCategories(data.customCategories);
+        if (data.theme) setTheme(data.theme);
+      } else {
+        setTasks(defaultTasks);
+      }
+      dataLoaded.current = true;
+      setDataLoading(false);
+    };
+    load();
+  }, [user]);
 
-  if (savedTasks) {
-    const parsedTasks = JSON.parse(savedTasks);
-    const migratedTasks = parsedTasks.map((task) => ({
-      id: task.id ?? Date.now() + Math.random(),
-      name: task.name ?? "",
-      category: task.category ?? "",
-      dailyGoal: task.dailyGoal ?? "",
-      dailyPoints: task.dailyPoints ?? 0,
-      extraThreshold: task.extraThreshold ?? "",
-      extraBonus: task.extraBonus ?? 0,
-      weeklyGoal: task.weeklyGoal ?? 0,
-      weeklyBonus: task.weeklyBonus ?? 0,
-      active: task.active ?? true,
-    }));
-    setTasks(migratedTasks);
-  } else {
-    setTasks(defaultTasks);
-  }
+  // Apply theme class
+  useEffect(() => {
+    document.body.classList.remove("theme-light", "theme-dark");
+    document.body.classList.add(`theme-${theme}`);
+  }, [theme]);
 
-  if (savedLogs) {
-    setLogs(JSON.parse(savedLogs));
-  }
-}, []);
+  // Save to Firestore on changes (only after initial load)
+  useEffect(() => {
+    if (!user || !dataLoaded.current) return;
+    setDoc(doc(db, "users", user.uid), { tasks }, { merge: true });
+  }, [tasks]);
 
-useEffect(() => {
-  const saved = localStorage.getItem(CATEGORY_STORAGE_KEY);
-  if (saved) setCustomCategories(JSON.parse(saved));
-}, []);
+  useEffect(() => {
+    if (!user || !dataLoaded.current) return;
+    setDoc(doc(db, "users", user.uid), { logs }, { merge: true });
+  }, [logs]);
 
-useEffect(() => {
-  localStorage.setItem("achievement_theme", theme);
-  document.body.classList.remove("theme-light", "theme-dark");
-  document.body.classList.add(`theme-${theme}`);
-}, [theme]);
+  useEffect(() => {
+    if (!user || !dataLoaded.current) return;
+    setDoc(doc(db, "users", user.uid), { customCategories }, { merge: true });
+  }, [customCategories]);
 
-useEffect(() => {
-  localStorage.setItem(CATEGORY_STORAGE_KEY, JSON.stringify(customCategories));
-}, [customCategories]);
-
-useEffect(() => {
-  localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
-}, [tasks]);
-
-useEffect(() => {
-  localStorage.setItem(LOGS_STORAGE_KEY, JSON.stringify(logs));
-}, [logs]);
+  useEffect(() => {
+    if (!user || !dataLoaded.current) return;
+    setDoc(doc(db, "users", user.uid), { theme }, { merge: true });
+  }, [theme]);
 
   const activeTasks = tasks.filter((task) => task.active);
   const archivedTasks = tasks.filter((task) => !task.active);
@@ -825,6 +845,56 @@ useEffect(() => {
     updateTaskLog(taskId, selectedDate, { extra: !current.extra });
   };
 
+  const handleSignIn = () => signInWithPopup(auth, googleProvider);
+  const handleSignOut = () => {
+    dataLoaded.current = false;
+    setTasks([]);
+    setLogs({});
+    setCustomCategories([]);
+    signOut(auth);
+  };
+
+  if (authLoading) {
+    return (
+      <div className="auth-screen">
+        <div className="auth-card">
+          <div className="auth-spinner" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="auth-screen">
+        <div className="auth-card">
+          <h1>Achievement Tracker</h1>
+          <p className="subtitle">Consistency over binge productivity.</p>
+          <button className="google-sign-in-button" onClick={handleSignIn}>
+            <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg">
+              <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
+              <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
+              <path d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z" fill="#FBBC05"/>
+              <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.962L3.964 7.294C4.672 5.163 6.656 3.58 9 3.58z" fill="#EA4335"/>
+            </svg>
+            Sign in with Google
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (dataLoading) {
+    return (
+      <div className="auth-screen">
+        <div className="auth-card">
+          <div className="auth-spinner" />
+          <p className="subtitle" style={{marginTop: 16}}>Loading your data...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="app">
       <div className="container">
@@ -858,6 +928,9 @@ useEffect(() => {
               onClick={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}
             >
               {theme === "light" ? "Dark" : "Light"}
+            </button>
+            <button className="theme-toggle" onClick={handleSignOut} title={user.email}>
+              Sign Out
             </button>
           </div>
         </div>
