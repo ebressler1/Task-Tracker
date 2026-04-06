@@ -2,12 +2,18 @@ import { useEffect, useMemo, useState } from "react";
 import {
   LineChart,
   Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+
+const STEEL_BLUE = "#769fb6";
+const PACIFIC_CYAN = "#188fa7";
+const MUTED_TEAL = "#9dbbae";
 import "./App.css";
 
 const CATEGORY_STORAGE_KEY = "achievement_categories";
@@ -887,53 +893,35 @@ useEffect(() => {
               </div>
             </div>
 
-            <div className="stats-grid stats-grid-four">
-              <div className="card stat-card">
-                <div className="stat-label">Today Baseline</div>
-                <div className="speedometer-wrap">
-                  <div
-                    className="speedometer"
-                    style={{
-                      background: `conic-gradient(
-                        var(--pacific-cyan) 0deg ${dailyBaselinePercent * 3.6}deg,
-                        rgba(118, 159, 182, 0.14) ${dailyBaselinePercent * 3.6}deg 360deg
-                      )`,
-                    }}
-                  >
-                    <div className="speedometer-inner">
-                      <div className="speedometer-fraction">
-                        {dailyBaselineEarned} / {dailyBaselineAvailable}
-                      </div>
-                      <div className="speedometer-percent">{dailyBaselinePercent}%</div>
-                    </div>
-                  </div>
-                </div>
+            <div className="card stats-strip">
+              <div className="stats-strip-item">
+                <span className="stats-strip-label">Today Baseline</span>
+                <span className="stats-strip-value">
+                  {dailyBaselineEarned}<span className="stats-strip-denom">/{dailyBaselineAvailable}</span>
+                </span>
+                <span className="stats-strip-sub">{dailyBaselinePercent}%</span>
               </div>
-
-              <div className="card stat-card">
-                <div className="stat-label">Today Total Points</div>
-                <div className="stat-value">{todayPoints}</div>
-                <div className="stat-subvalue">+{dailyExtraPoints} extra</div>
+              <div className="stats-strip-divider" />
+              <div className="stats-strip-item">
+                <span className="stats-strip-label">Today Points</span>
+                <span className="stats-strip-value">{todayPoints}</span>
+                <span className="stats-strip-sub">+{dailyExtraPoints} extra</span>
               </div>
-
-              <div className="card stat-card">
-                <div className="stat-label">Week Baseline</div>
-                <div className="stat-value">
-                  {weeklyBaselineEarned} / {weeklyBaselineAvailable}
-                </div>
-                <div className="stat-subvalue">
-                  {formatPercent(weeklyBaselineEarned, weeklyBaselineAvailable)}
-                </div>
+              <div className="stats-strip-divider" />
+              <div className="stats-strip-item">
+                <span className="stats-strip-label">Week Baseline</span>
+                <span className="stats-strip-value">
+                  {weeklyBaselineEarned}<span className="stats-strip-denom">/{weeklyBaselineAvailable}</span>
+                </span>
+                <span className="stats-strip-sub">{formatPercent(weeklyBaselineEarned, weeklyBaselineAvailable)}</span>
               </div>
-
-              <div className="card stat-card">
-                <div className="stat-label">Week Total Points</div>
-                <div className="stat-value">{weeklyTotalPoints}</div>
-                <div className="stat-subvalue">
-                  {weeklyExtraPoints >= 0 ? "+" : ""}
-                  {weeklyExtraPoints} extra • {weeklyAdjustments >= 0 ? "+" : ""}
-                  {weeklyAdjustments} weekly adj
-                </div>
+              <div className="stats-strip-divider" />
+              <div className="stats-strip-item">
+                <span className="stats-strip-label">Week Points</span>
+                <span className="stats-strip-value">{weeklyTotalPoints}</span>
+                <span className="stats-strip-sub">
+                  {weeklyAdjustments >= 0 ? "+" : ""}{weeklyAdjustments} adj
+                </span>
               </div>
             </div>
 
@@ -956,7 +944,69 @@ useEffect(() => {
                 </div>
               </div>
 
-              {activeTasks.length === 0 && <p className="empty-text">No active tasks yet.</p>}
+              {showForm && (
+                <div className="task-form-inline">
+                  <h3 style={{margin: "0 0 14px"}}>{editingTaskId ? "Edit Task" : "New Task"}</h3>
+                  <div className="labeled-form-grid">
+                    <div className="field-group">
+                      <label className="field-label">Task Name</label>
+                      <input className="input" placeholder="Workout" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                    </div>
+                    <div className="field-group">
+                      <label className="field-label">Category</label>
+                      <select className="input" value={form.category} onChange={(e) => {
+                        if (e.target.value === "__custom__") { setShowCustomCategoryInput(true); }
+                        else { setForm({ ...form, category: e.target.value }); setShowCustomCategoryInput(false); }
+                      }}>
+                        <option value="">Select category</option>
+                        {[...DEFAULT_CATEGORIES, ...customCategories].map((cat) => (<option key={cat} value={cat}>{cat}</option>))}
+                        <option value="__custom__">+ Add Custom</option>
+                      </select>
+                      {showCustomCategoryInput && (
+                        <div style={{ marginTop: "8px" }}>
+                          <input className="input" placeholder="Enter new category" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} />
+                          <button className="small-button" style={{ marginTop: "6px" }} onClick={() => {
+                            if (!newCategory.trim()) return;
+                            setCustomCategories([...customCategories, newCategory.trim()]);
+                            setForm({ ...form, category: newCategory.trim() });
+                            setNewCategory(""); setShowCustomCategoryInput(false);
+                          }}>Save Category</button>
+                        </div>
+                      )}
+                    </div>
+                    <div className="field-group">
+                      <label className="field-label">Daily Goal</label>
+                      <input className="input" placeholder="30 minutes" value={form.dailyGoal} onChange={(e) => setForm({ ...form, dailyGoal: e.target.value })} />
+                    </div>
+                    <div className="field-group">
+                      <label className="field-label">Daily Points</label>
+                      <input className="input" type="number" placeholder="10" value={form.dailyPoints} onChange={(e) => setForm({ ...form, dailyPoints: e.target.value })} />
+                    </div>
+                    <div className="field-group">
+                      <label className="field-label">Extra Threshold</label>
+                      <input className="input" placeholder="60 minutes" value={form.extraThreshold} onChange={(e) => setForm({ ...form, extraThreshold: e.target.value })} />
+                    </div>
+                    <div className="field-group">
+                      <label className="field-label">Extra Points</label>
+                      <input className="input" type="number" placeholder="5" value={form.extraBonus} onChange={(e) => setForm({ ...form, extraBonus: e.target.value })} />
+                    </div>
+                    <div className="field-group">
+                      <label className="field-label">Weekly Goal (times/week)</label>
+                      <input className="input" type="number" placeholder="3" value={form.weeklyGoal} onChange={(e) => setForm({ ...form, weeklyGoal: e.target.value })} />
+                    </div>
+                    <div className="field-group">
+                      <label className="field-label">Weekly Bonus Points</label>
+                      <input className="input" type="number" placeholder="20" value={form.weeklyBonus} onChange={(e) => setForm({ ...form, weeklyBonus: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="task-controls">
+                    <button className="small-button" onClick={saveTask}>{editingTaskId ? "Save Changes" : "Add Task"}</button>
+                    <button className="small-button archive-button" onClick={cancelEdit}>Cancel</button>
+                  </div>
+                </div>
+              )}
+
+              {activeTasks.length === 0 && !showForm && <p className="empty-text">No active tasks yet.</p>}
 
               {groupedActiveTasks.map(([categoryName, tasksInCategory]) => (
                 <div key={categoryName} className="task-category-block">
@@ -1027,144 +1077,6 @@ useEffect(() => {
               ))}
             </div>
 
-            {showForm && <div className="card">
-              <h2>{editingTaskId ? "Edit Task" : "Add Task"}</h2>
-
-              <div className="labeled-form-grid">
-                <div className="field-group">
-                  <label className="field-label">Task Name</label>
-                  <input
-                    className="input"
-                    placeholder="Workout"
-                    value={form.name}
-                    onChange={(e) => setForm({ ...form, name: e.target.value })}
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label">Category</label>
-                  <select
-                    className="input"
-                    value={form.category}
-                    onChange={(e) => {
-                      if (e.target.value === "__custom__") {
-                        setShowCustomCategoryInput(true);
-                      } else {
-                        setForm({ ...form, category: e.target.value });
-                        setShowCustomCategoryInput(false);
-                      }
-                    }}
-                  >
-                    <option value="">Select category</option>
-                    {[...DEFAULT_CATEGORIES, ...customCategories].map((cat) => (
-                      <option key={cat} value={cat}>
-                        {cat}
-                      </option>
-                    ))}
-                    <option value="__custom__">+ Add Custom</option>
-                  </select>
-                  {showCustomCategoryInput && (
-                    <div style={{ marginTop: "8px" }}>
-                      <input
-                        className="input"
-                        placeholder="Enter new category"
-                        value={newCategory}
-                        onChange={(e) => setNewCategory(e.target.value)}
-                      />
-                      <button
-                        className="small-button"
-                        style={{ marginTop: "6px" }}
-                        onClick={() => {
-                          if (!newCategory.trim()) return;
-
-                          const updated = [...customCategories, newCategory.trim()];
-                          setCustomCategories(updated);
-
-                          setForm({ ...form, category: newCategory.trim() });
-                          setNewCategory("");
-                          setShowCustomCategoryInput(false);
-                        }}
-                      >
-                        Save Category
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label">Daily Goal</label>
-                  <input
-                    className="input"
-                    placeholder="30 minutes"
-                    value={form.dailyGoal}
-                    onChange={(e) => setForm({ ...form, dailyGoal: e.target.value })}
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label">Daily Points</label>
-                  <input
-                    className="input"
-                    type="number"
-                    placeholder="10"
-                    value={form.dailyPoints}
-                    onChange={(e) => setForm({ ...form, dailyPoints: e.target.value })}
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label">Extra Threshold</label>
-                  <input
-                    className="input"
-                    placeholder="60 minutes"
-                    value={form.extraThreshold}
-                    onChange={(e) => setForm({ ...form, extraThreshold: e.target.value })}
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label">Extra Points</label>
-                  <input
-                    className="input"
-                    type="number"
-                    placeholder="5"
-                    value={form.extraBonus}
-                    onChange={(e) => setForm({ ...form, extraBonus: e.target.value })}
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label">Weekly Goal (times/week)</label>
-                  <input
-                    className="input"
-                    type="number"
-                    placeholder="3"
-                    value={form.weeklyGoal}
-                    onChange={(e) => setForm({ ...form, weeklyGoal: e.target.value })}
-                  />
-                </div>
-
-                <div className="field-group">
-                  <label className="field-label">Weekly Goal Bonus Points</label>
-                  <input
-                    className="input"
-                    type="number"
-                    placeholder="20"
-                    value={form.weeklyBonus}
-                    onChange={(e) => setForm({ ...form, weeklyBonus: e.target.value })}
-                  />
-                </div>
-              </div>
-
-              <div className="task-controls">
-                <button className="small-button" onClick={saveTask}>
-                  {editingTaskId ? "Save Changes" : "Add Task"}
-                </button>
-                <button className="small-button archive-button" onClick={cancelEdit}>
-                  Cancel
-                </button>
-              </div>
-            </div>}
 
             <div className="card archived-card">
               <h2>Archived Tasks</h2>
@@ -1242,30 +1154,13 @@ useEffect(() => {
               <div className="chart-wrap">
                 <ResponsiveContainer width="100%" height={260}>
                   <LineChart data={weeklyComparisonChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis dataKey="day" />
                     <YAxis />
                     <Tooltip />
-                    <Line
-                      type="monotone"
-                      dataKey="thisWeek"
-                      strokeWidth={4}
-                      name="This week"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="lastWeek"
-                      strokeWidth={2}
-                      strokeDasharray="6 4"
-                      name="Last week"
-                    />
-                    <Line
-                      type="monotone"
-                      dataKey="bestWeek"
-                      strokeWidth={2}
-                      strokeDasharray="2 6"
-                      name="Best week"
-                    />
+                    <Line type="monotone" dataKey="thisWeek" stroke={PACIFIC_CYAN} strokeWidth={3} name="This week" dot={false} />
+                    <Line type="monotone" dataKey="lastWeek" stroke={STEEL_BLUE} strokeWidth={2} strokeDasharray="6 4" name="Last week" dot={false} />
+                    <Line type="monotone" dataKey="bestWeek" stroke={MUTED_TEAL} strokeWidth={2} strokeDasharray="2 6" name="Best week" dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -1279,11 +1174,11 @@ useEffect(() => {
               <div className="chart-wrap">
                 <ResponsiveContainer width="100%" height={260}>
                   <LineChart data={currentWeekChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis dataKey="day" />
                     <YAxis domain={[0, 100]} />
                     <Tooltip />
-                    <Line type="monotone" dataKey="percent" strokeWidth={3} />
+                    <Line type="monotone" dataKey="percent" stroke={STEEL_BLUE} strokeWidth={3} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -1309,61 +1204,53 @@ useEffect(() => {
             </div>
 
             <div className="card">
-              <h2>Activity Heatmap</h2>
-              {activeTasks.map((task) => (
-                <div key={task.id} className="task-heatmap">
-                  <div className="task-heatmap-title">{task.name}</div>
-                  <div className="task-heatmap-scroll">
-                    <div className="task-heatmap-wrap">
-                      <div className="heatmap-month-row">
-                        <div className="heatmap-day-spacer" />
-                        {recentWeekStarts.map((weekStart, i) => {
-                          const d = new Date(weekStart + "T12:00:00");
-                          const prev = i > 0 ? new Date(recentWeekStarts[i - 1] + "T12:00:00") : null;
-                          const showMonth = !prev || d.getMonth() !== prev.getMonth();
-                          return (
-                            <div key={weekStart} className="heatmap-month-slot">
-                              {showMonth ? d.toLocaleDateString(undefined, { month: "short" }) : ""}
-                            </div>
-                          );
-                        })}
-                      </div>
-                      <div className="task-heatmap-grid">
-                        <div className="heatmap-day-labels">
-                          {["Mon", "", "Wed", "", "Fri", "", "Sun"].map((label, i) => (
-                            <div key={i} className="heatmap-day-label">{label}</div>
-                          ))}
+              <h2>Weekly Goal Heatmap</h2>
+              <div className="heatmap-scroll">
+                <div className="heatmap-grid">
+                  <div className="heatmap-month-header-row">
+                    <div className="heatmap-row-label" />
+                    {recentWeekStarts.map((weekStart, i) => {
+                      const d = new Date(weekStart + "T12:00:00");
+                      const prev = i > 0 ? new Date(recentWeekStarts[i - 1] + "T12:00:00") : null;
+                      const showMonth = !prev || d.getMonth() !== prev.getMonth();
+                      return (
+                        <div key={weekStart} className="heatmap-month-slot">
+                          {showMonth ? d.toLocaleDateString(undefined, { month: "short" }) : ""}
                         </div>
-                        {recentWeekStarts.map((weekStart) => {
-                          const dates = getWeekDates(weekStart);
-                          return (
-                            <div key={weekStart} className="heatmap-week-col">
-                              {dates.map((date) => {
-                                const isFuture = date > todayString();
-                                const log = isFuture ? { completed: false, extra: false } : getTaskLog(task.id, date);
-                                const level = isFuture ? 0 : log.completed ? 4 : 0;
-                                const label = isFuture ? "" : log.completed ? `✓${log.extra ? " + bonus" : ""}` : "—";
-                                return (
-                                  <div
-                                    key={date}
-                                    className={`heatmap-cell level-${level}${isFuture ? " heatmap-future" : ""}`}
-                                    title={`${date}: ${isFuture ? "future" : label}`}
-                                  />
-                                );
-                              })}
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
+                      );
+                    })}
                   </div>
+                  {activeTasks.map((task) => {
+                    const weekEnd = getWeekDates(currentWeekStart)[6];
+                    return (
+                      <div key={task.id} className="heatmap-task-row">
+                        <span className="heatmap-row-label" title={task.name}>{task.name}</span>
+                        <div className="heatmap-cells">
+                          {recentWeekStarts.map((weekStart) => {
+                            const wEnd = getWeekDates(weekStart)[6];
+                            const isFuture = weekStart > currentWeekStart;
+                            const count = getWeeklyCompletionCount(task, wEnd);
+                            const met = count >= task.weeklyGoal;
+                            const statusClass = isFuture ? "heatmap-cell heatmap-empty" : met ? "heatmap-cell heatmap-met" : "heatmap-cell heatmap-missed";
+                            return (
+                              <div
+                                key={weekStart}
+                                className={statusClass}
+                                title={`${weekLabelFromDate(weekStart)}: ${count}/${task.weeklyGoal}${isFuture ? " (future)" : met ? " ✓" : " ✗"}`}
+                              />
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              ))}
+              </div>
               <div className="heatmap-legend">
-                <span className="heatmap-legend-text">Not done</span>
-                <div className="heatmap-cell level-0" />
-                <div className="heatmap-cell level-4" />
-                <span className="heatmap-legend-text">Done</span>
+                <div className="heatmap-cell heatmap-met" />
+                <span className="heatmap-legend-text">Goal met</span>
+                <div className="heatmap-cell heatmap-missed" style={{marginLeft: 8}} />
+                <span className="heatmap-legend-text">Missed</span>
               </div>
             </div>
 
@@ -1371,13 +1258,13 @@ useEffect(() => {
               <h2>Average Daily Points by Week</h2>
               <div className="chart-wrap">
                 <ResponsiveContainer width="100%" height={260}>
-                  <LineChart data={weeklyAverageChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                  <BarChart data={weeklyAverageChartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
                     <XAxis dataKey="week" />
                     <YAxis />
                     <Tooltip />
-                    <Line type="monotone" dataKey="avgPoints" strokeWidth={3} />
-                  </LineChart>
+                    <Bar dataKey="avgPoints" fill={STEEL_BLUE} radius={[4, 4, 0, 0]} name="Avg pts/day" />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
@@ -1387,11 +1274,11 @@ useEffect(() => {
               <div className="chart-wrap">
                 <ResponsiveContainer width="100%" height={260}>
                   <LineChart data={weeklyAverageChartData}>
-                    <CartesianGrid strokeDasharray="3 3" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                     <XAxis dataKey="week" />
                     <YAxis domain={[0, 100]} />
                     <Tooltip />
-                    <Line type="monotone" dataKey="avgPercent" strokeWidth={3} />
+                    <Line type="monotone" dataKey="avgPercent" stroke={STEEL_BLUE} strokeWidth={3} dot={false} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

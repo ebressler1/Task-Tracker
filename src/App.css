@@ -945,6 +945,137 @@ body.theme-dark .task-compact-card {
   color: var(--text-muted);
 }
 
+/* Stats strip */
+
+.stats-strip {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0;
+  padding: 14px 20px;
+  flex-wrap: wrap;
+}
+
+.stats-strip-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  flex: 1;
+  min-width: 80px;
+  padding: 6px 12px;
+}
+
+.stats-strip-divider {
+  width: 1px;
+  height: 40px;
+  background: var(--border);
+  flex-shrink: 0;
+}
+
+.stats-strip-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+.stats-strip-value {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.1;
+}
+
+.stats-strip-denom {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.stats-strip-sub {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+/* Inline task form */
+
+.task-form-inline {
+  background: var(--bg-soft);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 18px;
+}
+
+body.theme-dark .task-form-inline {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+/* Weekly goal heatmap */
+
+.heatmap-scroll {
+  overflow-x: auto;
+}
+
+.heatmap-grid {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: max-content;
+}
+
+.heatmap-month-header-row {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+  align-items: center;
+  margin-bottom: 2px;
+}
+
+.heatmap-task-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.heatmap-row-label {
+  width: 120px;
+  min-width: 120px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  padding-right: 8px;
+  flex-shrink: 0;
+}
+
+.heatmap-cells {
+  display: flex;
+  flex-direction: row;
+  gap: 4px;
+}
+
+.heatmap-cell.heatmap-met {
+  background: #769fb6;
+}
+
+.heatmap-cell.heatmap-missed {
+  background: #e89b8c;
+}
+
+.heatmap-cell.heatmap-empty {
+  background: var(--heatmap-0);
+  opacity: 0.4;
+}
+
 @media (max-width: 980px) {
   .stats-grid-four,
   .stats-grid-three,
@@ -964,6 +1095,19 @@ body.theme-dark .task-compact-card {
 }
 
 @media (max-width: 768px) {
+  .stats-strip {
+    flex-wrap: wrap;
+    padding: 10px 12px;
+  }
+
+  .stats-strip-divider {
+    display: none;
+  }
+
+  .stats-strip-item {
+    min-width: 40%;
+  }
+
   .top-bar,
   .task-header,
   .section-header,
