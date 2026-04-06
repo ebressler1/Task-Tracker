@@ -476,8 +476,9 @@ body.theme-dark .nav-button {
 }
 
 .date-strip {
-  display: flex;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: end;
   gap: 10px;
 }
 
@@ -485,6 +486,7 @@ body.theme-dark .nav-button {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .date-input-wrap label {
@@ -1210,10 +1212,5 @@ body.theme-dark .task-form-inline {
     text-align: center;
   }
 
-  /* Date strip: keep arrows bottom-aligned with the input, no wrapping */
-  .date-strip {
-    align-items: flex-end;
-    flex-wrap: nowrap;
-  }
 }
 
