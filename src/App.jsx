@@ -974,9 +974,9 @@ function App() {
                 </div>
               </div>
 
-              {showForm && (
+              {showForm && !editingTaskId && (
                 <div className="task-form-inline">
-                  <h3 style={{margin: "0 0 14px"}}>{editingTaskId ? "Edit Task" : "New Task"}</h3>
+                  <h3 style={{margin: "0 0 14px"}}>New Task</h3>
                   <div className="labeled-form-grid">
                     <div className="field-group">
                       <label className="field-label">Task Name</label>
@@ -1030,7 +1030,7 @@ function App() {
                     </div>
                   </div>
                   <div className="task-controls">
-                    <button className="small-button" onClick={saveTask}>{editingTaskId ? "Save Changes" : "Add Task"}</button>
+                    <button className="small-button" onClick={saveTask}>Add Task</button>
                     <button className="small-button archive-button" onClick={cancelEdit}>Cancel</button>
                   </div>
                 </div>
@@ -1063,8 +1063,8 @@ function App() {
                         weeklyStatus === "yellow" ? "On track" : "Missed";
 
                       return (
+                        <div key={task.id}>
                         <div
-                          key={task.id}
                           className={`task-compact-card ${log.completed ? "is-complete" : ""}`}
                         >
                           <button
@@ -1086,6 +1086,11 @@ function App() {
 
                           <span className="task-name">{task.name}</span>
 
+                          <span className="task-goal-info">
+                            {task.dailyGoal && <span>Goal: {task.dailyGoal}</span>}
+                            {task.extraThreshold && <span>Bonus: {task.extraThreshold}</span>}
+                          </span>
+
                           <span className="task-weekly-progress">
                             {weeklyCount}<span className="task-weekly-denom">/{task.weeklyGoal}</span>
                           </span>
@@ -1099,6 +1104,68 @@ function App() {
                             <button className="task-action-mini" onClick={() => toggleArchived(task.id)}>Archive</button>
                             <button className="task-action-mini danger-mini" onClick={() => deleteTask(task.id)}>Delete</button>
                           </div>
+                        </div>
+                        {editingTaskId === task.id && (
+                          <div className="task-form-inline">
+                            <h3 style={{margin: "0 0 14px"}}>Edit Task</h3>
+                            <div className="labeled-form-grid">
+                              <div className="field-group">
+                                <label className="field-label">Task Name</label>
+                                <input className="input" placeholder="Workout" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                              </div>
+                              <div className="field-group">
+                                <label className="field-label">Category</label>
+                                <select className="input" value={form.category} onChange={(e) => {
+                                  if (e.target.value === "__custom__") { setShowCustomCategoryInput(true); }
+                                  else { setForm({ ...form, category: e.target.value }); setShowCustomCategoryInput(false); }
+                                }}>
+                                  <option value="">Select category</option>
+                                  {[...DEFAULT_CATEGORIES, ...customCategories].map((cat) => (<option key={cat} value={cat}>{cat}</option>))}
+                                  <option value="__custom__">+ Add Custom</option>
+                                </select>
+                                {showCustomCategoryInput && (
+                                  <div style={{ marginTop: "8px" }}>
+                                    <input className="input" placeholder="Enter new category" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} />
+                                    <button className="small-button" style={{ marginTop: "6px" }} onClick={() => {
+                                      if (!newCategory.trim()) return;
+                                      setCustomCategories([...customCategories, newCategory.trim()]);
+                                      setForm({ ...form, category: newCategory.trim() });
+                                      setNewCategory(""); setShowCustomCategoryInput(false);
+                                    }}>Save Category</button>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="field-group">
+                                <label className="field-label">Daily Goal</label>
+                                <input className="input" placeholder="30 minutes" value={form.dailyGoal} onChange={(e) => setForm({ ...form, dailyGoal: e.target.value })} />
+                              </div>
+                              <div className="field-group">
+                                <label className="field-label">Daily Points</label>
+                                <input className="input" type="number" placeholder="10" value={form.dailyPoints} onChange={(e) => setForm({ ...form, dailyPoints: e.target.value })} />
+                              </div>
+                              <div className="field-group">
+                                <label className="field-label">Extra Threshold</label>
+                                <input className="input" placeholder="60 minutes" value={form.extraThreshold} onChange={(e) => setForm({ ...form, extraThreshold: e.target.value })} />
+                              </div>
+                              <div className="field-group">
+                                <label className="field-label">Extra Points</label>
+                                <input className="input" type="number" placeholder="5" value={form.extraBonus} onChange={(e) => setForm({ ...form, extraBonus: e.target.value })} />
+                              </div>
+                              <div className="field-group">
+                                <label className="field-label">Weekly Goal (times/week)</label>
+                                <input className="input" type="number" placeholder="3" value={form.weeklyGoal} onChange={(e) => setForm({ ...form, weeklyGoal: e.target.value })} />
+                              </div>
+                              <div className="field-group">
+                                <label className="field-label">Weekly Bonus Points</label>
+                                <input className="input" type="number" placeholder="20" value={form.weeklyBonus} onChange={(e) => setForm({ ...form, weeklyBonus: e.target.value })} />
+                              </div>
+                            </div>
+                            <div className="task-controls">
+                              <button className="small-button" onClick={saveTask}>Save Changes</button>
+                              <button className="small-button archive-button" onClick={cancelEdit}>Cancel</button>
+                            </div>
+                          </div>
+                        )}
                         </div>
                       );
                     })}
