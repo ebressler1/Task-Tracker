@@ -230,27 +230,31 @@ function buildCumulativeWeekData(activeTasks, tasks, logs, weekStart) {
 }
 
 
+// Each level requires ALL THREE thresholds simultaneously:
+//   lifetimePts  — total points ever earned
+//   recentPts    — points earned in the last 90 days (requires sustained multi-task activity)
+//   perfectPct   — % of past weeks that were perfect (0-100); ignored until ≥2 tracked weeks
 const LEVELS = [
-  { level: 1,  name: "Newcomer",     points: 0,     weeks: 0  },
-  { level: 2,  name: "Beginner",     points: 75,    weeks: 1  },
-  { level: 3,  name: "Learning",     points: 200,   weeks: 2  },
-  { level: 4,  name: "Developing",   points: 400,   weeks: 3  },
-  { level: 5,  name: "Committed",    points: 650,   weeks: 5  },
-  { level: 6,  name: "Consistent",   points: 950,   weeks: 7  },
-  { level: 7,  name: "Dedicated",    points: 1350,  weeks: 10 },
-  { level: 8,  name: "Focused",      points: 1850,  weeks: 13 },
-  { level: 9,  name: "Disciplined",  points: 2500,  weeks: 17 },
-  { level: 10, name: "Driven",       points: 3300,  weeks: 21 },
-  { level: 11, name: "Persistent",   points: 4300,  weeks: 25 },
-  { level: 12, name: "Resilient",    points: 5500,  weeks: 29 },
-  { level: 13, name: "Seasoned",     points: 7000,  weeks: 33 },
-  { level: 14, name: "Accomplished", points: 8800,  weeks: 37 },
-  { level: 15, name: "Expert",       points: 11000, weeks: 40 },
-  { level: 16, name: "Master",       points: 13500, weeks: 43 },
-  { level: 17, name: "Elite",        points: 16500, weeks: 46 },
-  { level: 18, name: "Champion",     points: 20000, weeks: 48 },
-  { level: 19, name: "Legend",       points: 24500, weeks: 50 },
-  { level: 20, name: "Transcendent", points: 30000, weeks: 52 },
+  { level: 1,  name: "Newcomer",     lifetimePts: 0,      recentPts: 0,    perfectPct: 0  },
+  { level: 2,  name: "Beginner",     lifetimePts: 40,     recentPts: 15,   perfectPct: 25 },
+  { level: 3,  name: "Learning",     lifetimePts: 120,    recentPts: 45,   perfectPct: 35 },
+  { level: 4,  name: "Developing",   lifetimePts: 280,    recentPts: 90,   perfectPct: 42 },
+  { level: 5,  name: "Committed",    lifetimePts: 500,    recentPts: 145,  perfectPct: 48 },
+  { level: 6,  name: "Consistent",   lifetimePts: 800,    recentPts: 205,  perfectPct: 52 },
+  { level: 7,  name: "Dedicated",    lifetimePts: 1200,   recentPts: 270,  perfectPct: 56 },
+  { level: 8,  name: "Focused",      lifetimePts: 1750,   recentPts: 340,  perfectPct: 59 },
+  { level: 9,  name: "Disciplined",  lifetimePts: 2500,   recentPts: 420,  perfectPct: 62 },
+  { level: 10, name: "Driven",       lifetimePts: 3500,   recentPts: 510,  perfectPct: 65 },
+  { level: 11, name: "Persistent",   lifetimePts: 5000,   recentPts: 600,  perfectPct: 67 },
+  { level: 12, name: "Resilient",    lifetimePts: 7000,   recentPts: 700,  perfectPct: 69 },
+  { level: 13, name: "Seasoned",     lifetimePts: 9500,   recentPts: 800,  perfectPct: 71 },
+  { level: 14, name: "Accomplished", lifetimePts: 12500,  recentPts: 900,  perfectPct: 73 },
+  { level: 15, name: "Expert",       lifetimePts: 16000,  recentPts: 1000, perfectPct: 75 },
+  { level: 16, name: "Master",       lifetimePts: 20500,  recentPts: 1090, perfectPct: 78 },
+  { level: 17, name: "Elite",        lifetimePts: 26000,  recentPts: 1175, perfectPct: 81 },
+  { level: 18, name: "Champion",     lifetimePts: 32500,  recentPts: 1260, perfectPct: 84 },
+  { level: 19, name: "Legend",       lifetimePts: 40000,  recentPts: 1340, perfectPct: 87 },
+  { level: 20, name: "Transcendent", lifetimePts: 50000,  recentPts: 1400, perfectPct: 90 },
 ];
 
 const BADGES = [
@@ -509,8 +513,10 @@ function App() {
 
   const weekDates = useMemo(() => getWeekDates(selectedDate), [selectedDate]);
 
+  // Weighted daily baseline: each task contributes (dailyPoints × weeklyGoal / 7) rounded.
+  // Reflects that tasks only required N times/week shouldn't inflate the daily target.
   const dailyBaselineAvailable = useMemo(() => {
-    return activeTasks.reduce((sum, task) => sum + task.dailyPoints, 0);
+    return activeTasks.reduce((sum, task) => sum + Math.round(task.dailyPoints * task.weeklyGoal / 7), 0);
   }, [activeTasks]);
 
   const dailyBaselineEarned = useMemo(() => {
@@ -531,11 +537,11 @@ function App() {
   const dailyBaselinePercent = dailyBaselineAvailable
     ? Math.round((dailyBaselineEarned / dailyBaselineAvailable) * 100)
     : 0;
+  // Weekly baseline = sum of (dailyPoints × weeklyGoal) per task — exactly the points
+  // achievable by hitting each task's goal the required number of times this week.
   const weeklyBaselineAvailable = useMemo(() => {
-    return weekDates.reduce((sum) => {
-      return sum + activeTasks.reduce((daySum, task) => daySum + task.dailyPoints, 0);
-    }, 0);
-  }, [activeTasks, weekDates]);
+    return activeTasks.reduce((sum, task) => sum + task.dailyPoints * task.weeklyGoal, 0);
+  }, [activeTasks]);
 
   const weeklyBaselineEarned = useMemo(() => {
     return weekDates.reduce((sum, date) => {
@@ -788,6 +794,20 @@ function App() {
     return total;
   }, [tasks, logs]);
 
+  // Points earned in the last 90 days — ensures recent multi-task activity
+  const recentPoints = useMemo(() => {
+    let total = 0;
+    const cutoff = shiftDate(todayString(), -90);
+    Object.entries(logs).forEach(([date, dayLog]) => {
+      if (date < cutoff) return;
+      tasks.forEach((task) => {
+        const log = dayLog?.[task.id];
+        if (log?.completed) total += task.dailyPoints + (log.extra ? task.extraBonus : 0);
+      });
+    });
+    return total;
+  }, [tasks, logs]);
+
   const totalPerfectWeeks = useMemo(() => {
     if (activeTasks.length === 0) return 0;
     let count = 0;
@@ -799,14 +819,30 @@ function App() {
     return count;
   }, [activeTasks, tasks, logs, recentWeekStarts, currentWeekStart]);
 
+  // Perfect week % across all tracked past weeks (ignored if fewer than 2 weeks tracked)
+  const perfectWeekPct = useMemo(() => {
+    if (activeTasks.length === 0) return 0;
+    const pastWeeks = recentWeekStarts.filter((w) => w < currentWeekStart);
+    if (pastWeeks.length < 2) return 0;
+    const perfectCount = pastWeeks.filter((weekStart) => {
+      const weekEnd = getWeekDates(weekStart)[6];
+      return isWeeklyPerfect(weekEnd);
+    }).length;
+    return Math.round((perfectCount / pastWeeks.length) * 100);
+  }, [activeTasks, tasks, logs, recentWeekStarts, currentWeekStart]);
+
   const currentLevelData = useMemo(() => {
     let cur = LEVELS[0];
     for (const lvl of LEVELS) {
-      if (lifetimePoints >= lvl.points && totalPerfectWeeks >= lvl.weeks) cur = lvl;
+      if (
+        lifetimePoints >= lvl.lifetimePts &&
+        recentPoints >= lvl.recentPts &&
+        perfectWeekPct >= lvl.perfectPct
+      ) cur = lvl;
       else break;
     }
     return cur;
-  }, [lifetimePoints, totalPerfectWeeks]);
+  }, [lifetimePoints, recentPoints, perfectWeekPct]);
 
   const nextLevelData = useMemo(() => {
     const idx = LEVELS.findIndex((l) => l.level === currentLevelData.level);
@@ -1538,19 +1574,28 @@ function App() {
               {nextLevelData ? (
                 <div className="level-progress-rows">
                   <div className="level-progress-row">
-                    <span className="level-progress-label">Points</span>
+                    <span className="level-progress-label">Lifetime pts</span>
                     <div className="level-progress-bar-wrap">
-                      <div className="level-progress-bar" style={{ width: `${Math.min(100, ((lifetimePoints - currentLevelData.points) / (nextLevelData.points - currentLevelData.points)) * 100)}%` }} />
+                      <div className="level-progress-bar" style={{ width: `${Math.min(100, ((lifetimePoints - currentLevelData.lifetimePts) / Math.max(1, nextLevelData.lifetimePts - currentLevelData.lifetimePts)) * 100)}%` }} />
                     </div>
-                    <span className="level-progress-value">{lifetimePoints.toLocaleString()} / {nextLevelData.points.toLocaleString()}</span>
+                    <span className="level-progress-value">{lifetimePoints.toLocaleString()} / {nextLevelData.lifetimePts.toLocaleString()}</span>
                   </div>
                   <div className="level-progress-row">
-                    <span className="level-progress-label">Perfect weeks</span>
+                    <span className="level-progress-label">Last 90 days</span>
                     <div className="level-progress-bar-wrap">
-                      <div className="level-progress-bar" style={{ width: `${Math.min(100, ((totalPerfectWeeks - currentLevelData.weeks) / (nextLevelData.weeks - currentLevelData.weeks || 1)) * 100)}%` }} />
+                      <div className="level-progress-bar" style={{ width: `${Math.min(100, ((recentPoints - currentLevelData.recentPts) / Math.max(1, nextLevelData.recentPts - currentLevelData.recentPts)) * 100)}%` }} />
                     </div>
-                    <span className="level-progress-value">{totalPerfectWeeks} / {nextLevelData.weeks}</span>
+                    <span className="level-progress-value">{recentPoints.toLocaleString()} / {nextLevelData.recentPts.toLocaleString()}</span>
                   </div>
+                  {nextLevelData.perfectPct > 0 && (
+                    <div className="level-progress-row">
+                      <span className="level-progress-label">Perfect wk %</span>
+                      <div className="level-progress-bar-wrap">
+                        <div className="level-progress-bar" style={{ width: `${Math.min(100, (perfectWeekPct / nextLevelData.perfectPct) * 100)}%` }} />
+                      </div>
+                      <span className="level-progress-value">{perfectWeekPct}% / {nextLevelData.perfectPct}%</span>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="level-max-text">Max level reached. You are Transcendent.</div>
