@@ -230,32 +230,37 @@ function buildCumulativeWeekData(activeTasks, tasks, logs, weekStart) {
 }
 
 
-// Each level requires ALL FOUR thresholds simultaneously:
-//   lifetimePts  — total points ever earned (top: 100,000)
-//   recentPts    — points in the last 90 days (top: 10,000; requires sustained multi-task activity)
-//   perfectWeeks — lifetime count of perfect weeks (top: 100 ≈ 2 years of consistency)
-//   perfectPct   — % of past weeks that were perfect (top: 90%; ignored until ≥2 tracked weeks)
+// Levels require up to 5 pillars simultaneously:
+//   lifetimePts  — total points ever earned (top: 100,000; 20,000 by level 10)
+//   recentPts    — points in the last 90 days (top: 10,000)
+//   greatWeeks   — lifetime count of Great-or-better weeks (starts at level 1)
+//   greatPct     — % of past weeks that were Great-or-better (ignored until ≥2 tracked weeks)
+//   perfectPct   — % of past weeks that were Perfect (only required at levels 18–20)
+//
+// A "Great Week": ≤1 dropped task per category, no task done 0× (unless exempt).
+// Exempt task: weeklyGoal===1 AND dailyPoints>20.
+// Nearly Perfect and Perfect weeks automatically count as Great.
 const LEVELS = [
-  { level: 1,  name: "Newcomer",     lifetimePts: 0,       recentPts: 0,      perfectWeeks: 0,   perfectPct: 0  },
-  { level: 2,  name: "Beginner",     lifetimePts: 100,     recentPts: 50,     perfectWeeks: 1,   perfectPct: 25 },
-  { level: 3,  name: "Learning",     lifetimePts: 300,     recentPts: 150,    perfectWeeks: 2,   perfectPct: 35 },
-  { level: 4,  name: "Developing",   lifetimePts: 700,     recentPts: 300,    perfectWeeks: 3,   perfectPct: 42 },
-  { level: 5,  name: "Committed",    lifetimePts: 1300,    recentPts: 550,    perfectWeeks: 4,   perfectPct: 48 },
-  { level: 6,  name: "Consistent",   lifetimePts: 2200,    recentPts: 850,    perfectWeeks: 5,   perfectPct: 52 },
-  { level: 7,  name: "Dedicated",    lifetimePts: 3500,    recentPts: 1200,   perfectWeeks: 7,   perfectPct: 56 },
-  { level: 8,  name: "Focused",      lifetimePts: 5200,    recentPts: 1650,   perfectWeeks: 10,  perfectPct: 59 },
-  { level: 9,  name: "Disciplined",  lifetimePts: 7500,    recentPts: 2200,   perfectWeeks: 15,  perfectPct: 62 },
-  { level: 10, name: "Driven",       lifetimePts: 11000,   recentPts: 2900,   perfectWeeks: 20,  perfectPct: 65 },
-  { level: 11, name: "Persistent",   lifetimePts: 16000,   recentPts: 3700,   perfectWeeks: 25,  perfectPct: 67 },
-  { level: 12, name: "Resilient",    lifetimePts: 23000,   recentPts: 4600,   perfectWeeks: 30,  perfectPct: 69 },
-  { level: 13, name: "Seasoned",     lifetimePts: 32000,   recentPts: 5600,   perfectWeeks: 35,  perfectPct: 71 },
-  { level: 14, name: "Accomplished", lifetimePts: 44000,   recentPts: 6600,   perfectWeeks: 40,  perfectPct: 73 },
-  { level: 15, name: "Expert",       lifetimePts: 57000,   recentPts: 7500,   perfectWeeks: 50,  perfectPct: 75 },
-  { level: 16, name: "Master",       lifetimePts: 68000,   recentPts: 8200,   perfectWeeks: 60,  perfectPct: 78 },
-  { level: 17, name: "Elite",        lifetimePts: 78000,   recentPts: 8700,   perfectWeeks: 70,  perfectPct: 81 },
-  { level: 18, name: "Champion",     lifetimePts: 87000,   recentPts: 9200,   perfectWeeks: 80,  perfectPct: 84 },
-  { level: 19, name: "Legend",       lifetimePts: 94000,   recentPts: 9600,   perfectWeeks: 90,  perfectPct: 87 },
-  { level: 20, name: "Transcendent", lifetimePts: 100000,  recentPts: 10000,  perfectWeeks: 100, perfectPct: 90 },
+  { level: 1,  name: "Newcomer",     lifetimePts: 0,       recentPts: 0,      greatWeeks: 0,   greatPct: 0,  perfectPct: 0  },
+  { level: 2,  name: "Beginner",     lifetimePts: 200,     recentPts: 80,     greatWeeks: 1,   greatPct: 20, perfectPct: 0  },
+  { level: 3,  name: "Learning",     lifetimePts: 600,     recentPts: 220,    greatWeeks: 2,   greatPct: 28, perfectPct: 0  },
+  { level: 4,  name: "Developing",   lifetimePts: 1200,    recentPts: 450,    greatWeeks: 4,   greatPct: 35, perfectPct: 0  },
+  { level: 5,  name: "Committed",    lifetimePts: 2500,    recentPts: 800,    greatWeeks: 6,   greatPct: 40, perfectPct: 0  },
+  { level: 6,  name: "Consistent",   lifetimePts: 4500,    recentPts: 1300,   greatWeeks: 9,   greatPct: 45, perfectPct: 0  },
+  { level: 7,  name: "Dedicated",    lifetimePts: 7000,    recentPts: 2000,   greatWeeks: 13,  greatPct: 50, perfectPct: 0  },
+  { level: 8,  name: "Focused",      lifetimePts: 11000,   recentPts: 2900,   greatWeeks: 18,  greatPct: 54, perfectPct: 0  },
+  { level: 9,  name: "Disciplined",  lifetimePts: 15500,   recentPts: 3800,   greatWeeks: 24,  greatPct: 57, perfectPct: 0  },
+  { level: 10, name: "Driven",       lifetimePts: 20000,   recentPts: 4800,   greatWeeks: 31,  greatPct: 60, perfectPct: 0  },
+  { level: 11, name: "Persistent",   lifetimePts: 27000,   recentPts: 5700,   greatWeeks: 39,  greatPct: 63, perfectPct: 0  },
+  { level: 12, name: "Resilient",    lifetimePts: 35000,   recentPts: 6500,   greatWeeks: 48,  greatPct: 65, perfectPct: 0  },
+  { level: 13, name: "Seasoned",     lifetimePts: 44000,   recentPts: 7200,   greatWeeks: 57,  greatPct: 67, perfectPct: 0  },
+  { level: 14, name: "Accomplished", lifetimePts: 54000,   recentPts: 7800,   greatWeeks: 66,  greatPct: 69, perfectPct: 0  },
+  { level: 15, name: "Expert",       lifetimePts: 63000,   recentPts: 8300,   greatWeeks: 74,  greatPct: 71, perfectPct: 0  },
+  { level: 16, name: "Master",       lifetimePts: 72000,   recentPts: 8700,   greatWeeks: 81,  greatPct: 73, perfectPct: 0  },
+  { level: 17, name: "Elite",        lifetimePts: 80000,   recentPts: 9100,   greatWeeks: 87,  greatPct: 75, perfectPct: 0  },
+  { level: 18, name: "Champion",     lifetimePts: 87000,   recentPts: 9400,   greatWeeks: 92,  greatPct: 78, perfectPct: 50 },
+  { level: 19, name: "Legend",       lifetimePts: 94000,   recentPts: 9700,   greatWeeks: 96,  greatPct: 80, perfectPct: 65 },
+  { level: 20, name: "Transcendent", lifetimePts: 100000,  recentPts: 10000,  greatWeeks: 100, greatPct: 82, perfectPct: 80 },
 ];
 
 const BADGES = [
@@ -499,6 +504,30 @@ function App() {
     if (activeTasks.length === 0) return false;
     return activeTasks.every(
       (task) => getWeeklyCompletionCount(task, weekAnchorDate) >= task.weeklyGoal
+    );
+  };
+
+  // A task is exempt from the zero-completion rule if it's a big once-a-week task
+  const isExemptTask = (task) => task.weeklyGoal === 1 && task.dailyPoints > 20;
+
+  // Great Week: no non-exempt task done 0×, AND at most 1 task missed per category.
+  // Nearly-Perfect (≤1 miss total) and Perfect weeks automatically qualify.
+  const isGreatWeek = (weekAnchorDate) => {
+    if (activeTasks.length === 0) return false;
+    // Fail immediately if any non-exempt task was done zero times
+    const anyZeroed = activeTasks.some(
+      (task) => !isExemptTask(task) && getWeeklyCompletionCount(task, weekAnchorDate) === 0
+    );
+    if (anyZeroed) return false;
+    // At most 1 dropped task per category
+    const groups = {};
+    activeTasks.forEach((task) => {
+      const cat = task.category || "Uncategorized";
+      if (!groups[cat]) groups[cat] = [];
+      groups[cat].push(task);
+    });
+    return Object.values(groups).every((catTasks) =>
+      catTasks.filter((t) => getWeeklyCompletionCount(t, weekAnchorDate) < t.weeklyGoal).length <= 1
     );
   };
 
@@ -809,18 +838,19 @@ function App() {
     return total;
   }, [tasks, logs]);
 
+  // Keep totalPerfectWeeks for badges
   const totalPerfectWeeks = useMemo(() => {
     if (activeTasks.length === 0) return 0;
     let count = 0;
     recentWeekStarts.forEach((weekStart) => {
-      if (weekStart >= currentWeekStart) return; // skip current unfinished week
+      if (weekStart >= currentWeekStart) return;
       const weekEnd = getWeekDates(weekStart)[6];
       if (isWeeklyPerfect(weekEnd)) count++;
     });
     return count;
   }, [activeTasks, tasks, logs, recentWeekStarts, currentWeekStart]);
 
-  // Perfect week % across all tracked past weeks (ignored if fewer than 2 weeks tracked)
+  // Perfect week % — used only for levels 18–20
   const perfectWeekPct = useMemo(() => {
     if (activeTasks.length === 0) return 0;
     const pastWeeks = recentWeekStarts.filter((w) => w < currentWeekStart);
@@ -832,19 +862,44 @@ function App() {
     return Math.round((perfectCount / pastWeeks.length) * 100);
   }, [activeTasks, tasks, logs, recentWeekStarts, currentWeekStart]);
 
+  // Great week count — includes Great, Nearly-Perfect, and Perfect weeks
+  const totalGreatWeeks = useMemo(() => {
+    if (activeTasks.length === 0) return 0;
+    let count = 0;
+    recentWeekStarts.forEach((weekStart) => {
+      if (weekStart >= currentWeekStart) return;
+      const weekEnd = getWeekDates(weekStart)[6];
+      if (isGreatWeek(weekEnd)) count++;
+    });
+    return count;
+  }, [activeTasks, tasks, logs, recentWeekStarts, currentWeekStart]);
+
+  // Great week % (ignored until ≥2 tracked weeks)
+  const greatWeekPct = useMemo(() => {
+    if (activeTasks.length === 0) return 0;
+    const pastWeeks = recentWeekStarts.filter((w) => w < currentWeekStart);
+    if (pastWeeks.length < 2) return 0;
+    const greatCount = pastWeeks.filter((weekStart) => {
+      const weekEnd = getWeekDates(weekStart)[6];
+      return isGreatWeek(weekEnd);
+    }).length;
+    return Math.round((greatCount / pastWeeks.length) * 100);
+  }, [activeTasks, tasks, logs, recentWeekStarts, currentWeekStart]);
+
   const currentLevelData = useMemo(() => {
     let cur = LEVELS[0];
     for (const lvl of LEVELS) {
       if (
         lifetimePoints >= lvl.lifetimePts &&
         recentPoints >= lvl.recentPts &&
-        totalPerfectWeeks >= lvl.perfectWeeks &&
+        totalGreatWeeks >= lvl.greatWeeks &&
+        greatWeekPct >= lvl.greatPct &&
         perfectWeekPct >= lvl.perfectPct
       ) cur = lvl;
       else break;
     }
     return cur;
-  }, [lifetimePoints, recentPoints, totalPerfectWeeks, perfectWeekPct]);
+  }, [lifetimePoints, recentPoints, totalGreatWeeks, greatWeekPct, perfectWeekPct]);
 
   const nextLevelData = useMemo(() => {
     const idx = LEVELS.findIndex((l) => l.level === currentLevelData.level);
@@ -1589,13 +1644,22 @@ function App() {
                     </div>
                     <span className="level-progress-value">{recentPoints.toLocaleString()} / {nextLevelData.recentPts.toLocaleString()}</span>
                   </div>
-                  {nextLevelData.perfectWeeks > 0 && (
+                  {nextLevelData.greatWeeks > 0 && (
                     <div className="level-progress-row">
-                      <span className="level-progress-label">Perfect weeks</span>
+                      <span className="level-progress-label">Great weeks</span>
                       <div className="level-progress-bar-wrap">
-                        <div className="level-progress-bar" style={{ width: `${Math.min(100, ((totalPerfectWeeks - currentLevelData.perfectWeeks) / Math.max(1, nextLevelData.perfectWeeks - currentLevelData.perfectWeeks)) * 100)}%` }} />
+                        <div className="level-progress-bar" style={{ width: `${Math.min(100, ((totalGreatWeeks - currentLevelData.greatWeeks) / Math.max(1, nextLevelData.greatWeeks - currentLevelData.greatWeeks)) * 100)}%` }} />
                       </div>
-                      <span className="level-progress-value">{totalPerfectWeeks} / {nextLevelData.perfectWeeks}</span>
+                      <span className="level-progress-value">{totalGreatWeeks} / {nextLevelData.greatWeeks}</span>
+                    </div>
+                  )}
+                  {nextLevelData.greatPct > 0 && (
+                    <div className="level-progress-row">
+                      <span className="level-progress-label">Great wk %</span>
+                      <div className="level-progress-bar-wrap">
+                        <div className="level-progress-bar" style={{ width: `${Math.min(100, (greatWeekPct / nextLevelData.greatPct) * 100)}%` }} />
+                      </div>
+                      <span className="level-progress-value">{greatWeekPct}% / {nextLevelData.greatPct}%</span>
                     </div>
                   )}
                   {nextLevelData.perfectPct > 0 && (
