@@ -144,13 +144,6 @@ function getWeekDates(dateString) {
   return dates;
 }
 
-function getRemainingDaysInWeek(dateString) {
-  const date = new Date(dateString + "T12:00:00");
-  const day = date.getDay();
-  if (day === 0) return 0;
-  return 7 - day;
-}
-
 function formatPercent(numerator, denominator) {
   if (!denominator) return "0%";
   return `${((numerator / denominator) * 100).toFixed(1)}%`;
@@ -346,7 +339,8 @@ function App() {
   const [personalRecords, setPersonalRecords] = useState({ bestDayPoints: 0, bestWeekPoints: 0, longestStreak: 0 });
   const [completingTaskId, setCompletingTaskId] = useState(null);
   const [completingPoints, setCompletingPoints] = useState(0);
-  const [greatWeekInfoVisible, setGreatWeekInfoVisible] = useState(false);
+  const [weekInfoVisible, setWeekInfoVisible] = useState(null);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
 
 
   const emptyForm = {
@@ -498,10 +492,15 @@ function App() {
     const completions = getWeeklyCompletionCount(task, weekAnchorDate);
     if (completions >= task.weeklyGoal) return "green";
 
-    const remainingDays = getRemainingDaysInWeek(weekAnchorDate);
+    const weekDatesForStatus = getWeekDates(weekAnchorDate);
+    const dateIndex = weekDatesForStatus.indexOf(weekAnchorDate);
+    const todayAvailable = !getTaskLog(task.id, weekAnchorDate).completed;
+    const remainingDays =
+      weekDatesForStatus.slice(dateIndex + (todayAvailable ? 0 : 1)).length;
     const needed = task.weeklyGoal - completions;
 
     if (needed > remainingDays) return "red";
+    if (needed === remainingDays) return "must";
     return "yellow";
   };
 
@@ -1042,15 +1041,136 @@ function App() {
     );
   }, [activeTasks, getTaskDailyStreak]);
 
-  const showGreatWeekInfo = () => {
-    setGreatWeekInfoVisible(true);
+  const selectedTask = useMemo(() => {
+    return tasks.find((task) => String(task.id) === String(selectedTaskId)) || activeTasks[0] || tasks[0] || null;
+  }, [tasks, activeTasks, selectedTaskId]);
+
+  const selectedTaskStats = useMemo(() => {
+    if (!selectedTask) return null;
+
+    const loggedDates = Object.keys(logs).sort();
+    const completions = loggedDates.filter((date) => getTaskLog(selectedTask.id, date).completed);
+    const bonusCount = loggedDates.filter((date) => {
+      const log = getTaskLog(selectedTask.id, date);
+      return log.completed && log.extra;
+    }).length;
+    const totalPoints = loggedDates.reduce((sum, date) => {
+      const log = getTaskLog(selectedTask.id, date);
+      if (!log.completed) return sum;
+      return sum + selectedTask.dailyPoints + (log.extra ? selectedTask.extraBonus : 0);
+    }, 0);
+    const recentWeeks = recentWeekStarts.slice(-8).map((weekStart) => {
+      const weekEnd = getWeekDates(weekStart)[6];
+      return {
+        week: weekLabelFromDate(weekStart),
+        completions: getWeeklyCompletionCount(selectedTask, weekEnd),
+        goal: selectedTask.weeklyGoal,
+      };
+    });
+    const bestWeek = recentWeekStarts.reduce(
+      (best, weekStart) => {
+        const weekEnd = getWeekDates(weekStart)[6];
+        const count = getWeeklyCompletionCount(selectedTask, weekEnd);
+        return count > best.completions ? { week: weekLabelFromDate(weekStart), completions: count } : best;
+      },
+      { week: "None", completions: 0 }
+    );
+
+    return {
+      completions: completions.length,
+      bonusCount,
+      totalPoints,
+      activeStreak: getTaskDailyStreak(selectedTask.id, todayString()),
+      longestStreak: getTaskLongestStreak(selectedTask.id),
+      completionRate: loggedDates.length ? Math.round((completions.length / loggedDates.length) * 100) : 0,
+      thisWeek: getWeeklyCompletionCount(selectedTask, selectedDate),
+      bestWeek,
+      recentWeeks,
+    };
+  }, [selectedTask, logs, recentWeekStarts, selectedDate, getTaskDailyStreak, getTaskLongestStreak]);
+
+  const weekTierInfo = {
+    great: "Great Week: each category has no more than one active task miss its weekly goal.",
+    excellent: "Excellent Week: meets Great Week criteria and no non-exempt active task is completed zero times.",
+    perfect: "Perfect Week: every active task meets or beats its weekly goal.",
+  };
+
+  const currentWeekTier = useMemo(() => {
+    const weekEnd = getWeekDates(currentWeekStart)[6];
+    if (isWeeklyPerfect(weekEnd)) return "Perfect";
+    if (isExcellentWeek(weekEnd)) return "Excellent";
+    if (isGreatWeek(weekEnd)) return "Great";
+    return "Building";
+  }, [currentWeekStart, activeTasks, tasks, logs]);
+
+  const weeklyReviewData = useMemo(() => {
+    const taskRows = activeTasks.map((task) => {
+      const count = getWeeklyCompletionCount(task, selectedDate);
+      const status = getWeeklyStatus(task, selectedDate);
+      return {
+        ...task,
+        count,
+        status,
+        needed: Math.max(0, task.weeklyGoal - count),
+      };
+    });
+    const strongest = [...taskRows].sort((a, b) => b.count / Math.max(1, b.weeklyGoal) - a.count / Math.max(1, a.weeklyGoal))[0];
+    const focus = taskRows.filter((task) => task.status === "must" || task.status === "red");
+
+    return {
+      taskRows,
+      strongest,
+      focus,
+      completed: taskRows.filter((task) => task.status === "green").length,
+      mustComplete: taskRows.filter((task) => task.status === "must").length,
+      missed: taskRows.filter((task) => task.status === "red").length,
+    };
+  }, [activeTasks, tasks, logs, selectedDate]);
+
+  const calendarMonth = useMemo(() => {
+    const anchor = new Date(selectedDate + "T12:00:00");
+    const first = new Date(anchor.getFullYear(), anchor.getMonth(), 1, 12);
+    const last = new Date(anchor.getFullYear(), anchor.getMonth() + 1, 0, 12);
+    const days = [];
+
+    for (let i = 1; i <= last.getDate(); i++) {
+      const d = new Date(anchor.getFullYear(), anchor.getMonth(), i, 12);
+      const date = d.toISOString().slice(0, 10);
+      const completed = activeTasks.filter((task) => getTaskLog(task.id, date).completed).length;
+      const points = activeTasks.reduce((sum, task) => {
+        const log = getTaskLog(task.id, date);
+        return sum + (log.completed ? task.dailyPoints + (log.extra ? task.extraBonus : 0) : 0);
+      }, 0);
+      const percent = activeTasks.length ? Math.round((completed / activeTasks.length) * 100) : 0;
+      days.push({ date, day: i, completed, total: activeTasks.length, percent, points });
+    }
+
+    return {
+      label: first.toLocaleDateString(undefined, { month: "long", year: "numeric" }),
+      leadingBlanks: first.getDay(),
+      days,
+    };
+  }, [selectedDate, activeTasks, tasks, logs]);
+
+  const milestoneTimeline = useMemo(() => {
+    return Object.entries(earnedBadges)
+      .map(([badgeId, date]) => {
+        const badge = BADGES.find((item) => item.id === badgeId);
+        return badge ? { ...badge, date } : null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.date.localeCompare(a.date));
+  }, [earnedBadges]);
+
+  const showWeekInfo = (type) => {
+    setWeekInfoVisible(type);
   };
 
   useEffect(() => {
-    if (!greatWeekInfoVisible) return undefined;
-    const timer = setTimeout(() => setGreatWeekInfoVisible(false), 4500);
+    if (!weekInfoVisible) return undefined;
+    const timer = setTimeout(() => setWeekInfoVisible(null), 5000);
     return () => clearTimeout(timer);
-  }, [greatWeekInfoVisible]);
+  }, [weekInfoVisible]);
 
   // Award freeze when current week becomes perfect
   useEffect(() => {
@@ -1346,6 +1466,24 @@ function App() {
               Weekly Streaks
             </button>
             <button
+              className={page === "review" ? "nav-button active" : "nav-button"}
+              onClick={() => setPage("review")}
+            >
+              Weekly Review
+            </button>
+            <button
+              className={page === "calendar" ? "nav-button active" : "nav-button"}
+              onClick={() => setPage("calendar")}
+            >
+              Calendar
+            </button>
+            <button
+              className={page === "milestones" ? "nav-button active" : "nav-button"}
+              onClick={() => setPage("milestones")}
+            >
+              Milestones
+            </button>
+            <button
               className={page === "long" ? "nav-button active" : "nav-button"}
               onClick={() => setPage("long")}
             >
@@ -1520,6 +1658,7 @@ function App() {
                       const weeklyStatus = getWeeklyStatus(task, selectedDate);
                       const shortStatusLabel =
                         weeklyStatus === "green" ? "Met" :
+                        weeklyStatus === "must" ? "Must Complete" :
                         weeklyStatus === "yellow" ? "On track" : "Missed";
 
                       return (
@@ -1578,6 +1717,7 @@ function App() {
                           </span>
 
                           <div className="task-action-row">
+                            <button className="task-action-mini" onClick={() => { setSelectedTaskId(task.id); setPage("task-detail"); }}>Details</button>
                             <button className="task-action-mini" onClick={() => startEditTask(task)}>Edit</button>
                             <button className="task-action-mini" onClick={() => toggleArchived(task.id)}>Archive</button>
                             <button className="task-action-mini danger-mini" onClick={() => deleteTask(task.id)}>Delete</button>
@@ -1691,6 +1831,243 @@ function App() {
                   </div>
                 </div>
               ))}
+            </div>
+          </>
+        )}
+
+        {page === "task-detail" && (
+          <>
+            <div className="card">
+              <div className="section-header">
+                <div>
+                  <h2>Task Detail</h2>
+                  <div className="section-subtitle">Pick a task to inspect its history and momentum.</div>
+                </div>
+                <select
+                  className="input compact-input"
+                  value={selectedTask?.id || ""}
+                  onChange={(e) => setSelectedTaskId(e.target.value)}
+                >
+                  {tasks.map((task) => (
+                    <option key={task.id} value={task.id}>{task.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {selectedTask && selectedTaskStats && (
+              <>
+                <div className="stats-grid stats-grid-four">
+                  <div className="card stat-card">
+                    <div className="stat-label">Completions</div>
+                    <div className="stat-value">{selectedTaskStats.completions}</div>
+                    <div className="stat-subvalue">{selectedTaskStats.completionRate}% logged-day rate</div>
+                  </div>
+                  <div className="card stat-card">
+                    <div className="stat-label">Total Points</div>
+                    <div className="stat-value">{selectedTaskStats.totalPoints}</div>
+                    <div className="stat-subvalue">including bonuses</div>
+                  </div>
+                  <div className="card stat-card">
+                    <div className="stat-label">Active Streak</div>
+                    <div className="stat-value">{selectedTaskStats.activeStreak}</div>
+                    <div className="stat-subvalue">days</div>
+                  </div>
+                  <div className="card stat-card">
+                    <div className="stat-label">Best Streak</div>
+                    <div className="stat-value">{selectedTaskStats.longestStreak}</div>
+                    <div className="stat-subvalue">days</div>
+                  </div>
+                </div>
+
+                <div className="stats-grid stats-grid-three">
+                  <div className="card stat-card">
+                    <div className="stat-label">This Week</div>
+                    <div className="stat-value">{selectedTaskStats.thisWeek}<span className="stats-strip-denom">/{selectedTask.weeklyGoal}</span></div>
+                    <div className="stat-subvalue">weekly goal progress</div>
+                  </div>
+                  <div className="card stat-card">
+                    <div className="stat-label">Best Week</div>
+                    <div className="stat-value">{selectedTaskStats.bestWeek.completions}</div>
+                    <div className="stat-subvalue">{selectedTaskStats.bestWeek.week}</div>
+                  </div>
+                  <div className="card stat-card">
+                    <div className="stat-label">Bonus Count</div>
+                    <div className="stat-value">{selectedTaskStats.bonusCount}</div>
+                    <div className="stat-subvalue">bonus completions</div>
+                  </div>
+                </div>
+
+                <div className="card">
+                  <h2>{selectedTask.name}</h2>
+                  <div className="detail-meta-grid">
+                    <div><span>Category</span><strong>{selectedTask.category || "Uncategorized"}</strong></div>
+                    <div><span>Daily Goal</span><strong>{selectedTask.dailyGoal || "None"}</strong></div>
+                    <div><span>Weekly Goal</span><strong>{selectedTask.weeklyGoal}x/week</strong></div>
+                    <div><span>Points</span><strong>{selectedTask.dailyPoints} + {selectedTask.extraBonus}</strong></div>
+                  </div>
+                </div>
+
+                <div className="card">
+                  <h2>Recent Weekly Completions</h2>
+                  <div className="chart-wrap">
+                    <ResponsiveContainer width="100%" height={260}>
+                      <BarChart data={selectedTaskStats.recentWeeks}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                        <XAxis dataKey="week" />
+                        <YAxis allowDecimals={false} />
+                        <Tooltip />
+                        <Bar dataKey="completions" fill={PACIFIC_CYAN} radius={[4, 4, 0, 0]} name="Completions" />
+                        <Bar dataKey="goal" fill={MUTED_TEAL} radius={[4, 4, 0, 0]} name="Goal" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              </>
+            )}
+          </>
+        )}
+
+        {page === "review" && (
+          <>
+            <div className="stats-grid stats-grid-four">
+              <div className="card stat-card">
+                <div className="stat-label">Week Status</div>
+                <div className="stat-value">{currentWeekTier}</div>
+                <div className="stat-subvalue">{weekLabelFromDate(currentWeekStart)}</div>
+              </div>
+              <div className="card stat-card">
+                <div className="stat-label">Goals Met</div>
+                <div className="stat-value">{weeklyReviewData.completed}<span className="stats-strip-denom">/{activeTasks.length}</span></div>
+                <div className="stat-subvalue">active tasks</div>
+              </div>
+              <div className="card stat-card">
+                <div className="stat-label">Must Complete</div>
+                <div className="stat-value">{weeklyReviewData.mustComplete}</div>
+                <div className="stat-subvalue">tasks on the line</div>
+              </div>
+              <div className="card stat-card">
+                <div className="stat-label">Missed</div>
+                <div className="stat-value">{weeklyReviewData.missed}</div>
+                <div className="stat-subvalue">unrecoverable this week</div>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="section-header">
+                <div>
+                  <h2>Weekly Review</h2>
+                  <div className="section-subtitle">
+                    {weeklyReviewData.strongest ? `${weeklyReviewData.strongest.name} is carrying the week.` : "No active tasks yet."}
+                  </div>
+                </div>
+                <div className={`status-badge ${currentWeekTier.toLowerCase()}`}>{currentWeekTier}</div>
+              </div>
+
+              <div className="review-list">
+                {weeklyReviewData.taskRows.map((task) => {
+                  const label = task.status === "green" ? "Met" : task.status === "must" ? "Must Complete" : task.status === "yellow" ? "On track" : "Missed";
+                  return (
+                    <div key={task.id} className="review-row">
+                      <div>
+                        <strong>{task.name}</strong>
+                        <span>{task.category || "Uncategorized"}</span>
+                      </div>
+                      <div className="review-progress">{task.count}/{task.weeklyGoal}</div>
+                      <span className={`status-badge ${task.status}`}>{label}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="card">
+              <h2>Focus For The Rest Of This Week</h2>
+              {weeklyReviewData.focus.length === 0 ? (
+                <p className="empty-text">No urgent tasks right now.</p>
+              ) : (
+                <div className="focus-grid">
+                  {weeklyReviewData.focus.map((task) => (
+                    <div key={task.id} className="focus-item">
+                      <strong>{task.name}</strong>
+                      <span>{task.needed} more needed</span>
+                      <span className={`status-badge ${task.status}`}>{task.status === "must" ? "Must Complete" : "Missed"}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {page === "calendar" && (
+          <>
+            <div className="card">
+              <div className="section-header">
+                <button className="date-arrow" onClick={() => setSelectedDate((prev) => {
+                  const d = new Date(prev + "T12:00:00");
+                  d.setMonth(d.getMonth() - 1, 1);
+                  return d.toISOString().slice(0, 10);
+                })}>←</button>
+                <div>
+                  <h2>{calendarMonth.label}</h2>
+                  <div className="section-subtitle">Daily completion density and points.</div>
+                </div>
+                <button className="date-arrow" onClick={() => setSelectedDate((prev) => {
+                  const d = new Date(prev + "T12:00:00");
+                  d.setMonth(d.getMonth() + 1, 1);
+                  return d.toISOString().slice(0, 10);
+                })}>→</button>
+              </div>
+            </div>
+
+            <div className="card">
+              <div className="calendar-grid">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                  <div key={day} className="calendar-weekday">{day}</div>
+                ))}
+                {Array.from({ length: calendarMonth.leadingBlanks }).map((_, index) => (
+                  <div key={`blank-${index}`} className="calendar-day empty" />
+                ))}
+                {calendarMonth.days.map((day) => (
+                  <button
+                    key={day.date}
+                    className={`calendar-day heat-${Math.min(4, Math.ceil(day.percent / 25))} ${day.date === selectedDate ? "selected" : ""}`}
+                    onClick={() => setSelectedDate(day.date)}
+                    title={`${day.date}: ${day.completed}/${day.total} tasks, ${day.points} pts`}
+                  >
+                    <span>{day.day}</span>
+                    <strong>{day.percent}%</strong>
+                    <em>{day.points} pts</em>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+
+        {page === "milestones" && (
+          <>
+            <div className="card">
+              <h2>Milestones Timeline</h2>
+              <div className="section-subtitle">A running history of earned achievements.</div>
+            </div>
+
+            <div className="timeline-list">
+              {milestoneTimeline.length === 0 ? (
+                <div className="card"><p className="empty-text">No milestones earned yet.</p></div>
+              ) : (
+                milestoneTimeline.map((badge) => (
+                  <div key={`${badge.id}-${badge.date}`} className="timeline-item">
+                    <div className="timeline-icon">{badge.icon}</div>
+                    <div>
+                      <strong>{badge.name}</strong>
+                      <span>{badge.desc}</span>
+                    </div>
+                    <time>{badge.date}</time>
+                  </div>
+                ))
+              )}
             </div>
           </>
         )}
@@ -1852,27 +2229,27 @@ function App() {
             </div>
 
             <div className="week-counter-wrap">
-              {greatWeekInfoVisible && (
+              {weekInfoVisible && (
                 <div className="info-popover" role="status">
-                  A Great Week means each category has no more than one active task miss its weekly goal.
+                  {weekTierInfo[weekInfoVisible]}
                 </div>
               )}
               <div className="stats-grid stats-grid-three">
-                <button className="card stat-card stat-card-button" type="button" onClick={showGreatWeekInfo}>
+                <button className="card stat-card stat-card-button" type="button" onClick={() => showWeekInfo("great")}>
                   <div className="stat-label">Great Weeks</div>
                   <div className="stat-value">{totalGreatWeeks}</div>
                   <div className="stat-subvalue">tap for criteria</div>
                 </button>
-                <div className="card stat-card">
+                <button className="card stat-card stat-card-button" type="button" onClick={() => showWeekInfo("excellent")}>
                   <div className="stat-label">Excellent Weeks</div>
                   <div className="stat-value">{totalExcellentWeeks}</div>
-                  <div className="stat-subvalue">great, with no zeroed tasks</div>
-                </div>
-                <div className="card stat-card">
+                  <div className="stat-subvalue">tap for criteria</div>
+                </button>
+                <button className="card stat-card stat-card-button" type="button" onClick={() => showWeekInfo("perfect")}>
                   <div className="stat-label">Perfect Weeks</div>
                   <div className="stat-value">{totalPerfectWeeks}</div>
-                  <div className="stat-subvalue">all weekly goals met</div>
-                </div>
+                  <div className="stat-subvalue">tap for criteria</div>
+                </button>
               </div>
             </div>
 
