@@ -507,6 +507,17 @@ function App() {
     );
   };
 
+  const getWeeklyMissedGoalCount = (weekAnchorDate) => {
+    return activeTasks.filter(
+      (task) => getWeeklyCompletionCount(task, weekAnchorDate) < task.weeklyGoal
+    ).length;
+  };
+
+  const isNearlyPerfectWeek = (weekAnchorDate) => {
+    if (activeTasks.length === 0) return false;
+    return getWeeklyMissedGoalCount(weekAnchorDate) === 1;
+  };
+
   // A task is exempt from the zero-completion rule if it's a big once-a-week task
   const isExemptTask = (task) => task.weeklyGoal === 1 && task.dailyPoints > 20;
 
@@ -870,6 +881,17 @@ function App() {
       if (weekStart >= currentWeekStart) return;
       const weekEnd = getWeekDates(weekStart)[6];
       if (isGreatWeek(weekEnd)) count++;
+    });
+    return count;
+  }, [activeTasks, tasks, logs, recentWeekStarts, currentWeekStart]);
+
+  const totalNearlyPerfectWeeks = useMemo(() => {
+    if (activeTasks.length === 0) return 0;
+    let count = 0;
+    recentWeekStarts.forEach((weekStart) => {
+      if (weekStart >= currentWeekStart) return;
+      const weekEnd = getWeekDates(weekStart)[6];
+      if (isNearlyPerfectWeek(weekEnd)) count++;
     });
     return count;
   }, [activeTasks, tasks, logs, recentWeekStarts, currentWeekStart]);
@@ -1676,6 +1698,24 @@ function App() {
             </div>
 
             {/* Personal Records + Streaks + Freezes row */}
+            <div className="stats-grid stats-grid-three">
+              <div className="card stat-card">
+                <div className="stat-label">Great Weeks</div>
+                <div className="stat-value">{totalGreatWeeks}</div>
+                <div className="stat-subvalue">great-or-better weeks</div>
+              </div>
+              <div className="card stat-card">
+                <div className="stat-label">Nearly Perfect Weeks</div>
+                <div className="stat-value">{totalNearlyPerfectWeeks}</div>
+                <div className="stat-subvalue">one missed weekly goal</div>
+              </div>
+              <div className="card stat-card">
+                <div className="stat-label">Perfect Weeks</div>
+                <div className="stat-value">{totalPerfectWeeks}</div>
+                <div className="stat-subvalue">all weekly goals met</div>
+              </div>
+            </div>
+
             <div className="stats-grid stats-grid-three">
               <div className="card stat-card">
                 <div className="stat-label">Best Day</div>
