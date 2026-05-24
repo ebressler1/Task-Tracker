@@ -265,22 +265,59 @@ const LEVELS = [
 
 const BADGES = [
   { id: "first_task",   icon: "🎯", name: "First Step",        desc: "Complete your first task"                  },
+  { id: "tasks_10",     icon: "✅", name: "Getting Started",    desc: "Complete 10 tasks"                        },
+  { id: "tasks_50",     icon: "📋", name: "Checklist Champ",    desc: "Complete 50 tasks"                        },
+  { id: "tasks_100",    icon: "🧱", name: "Habit Builder",      desc: "Complete 100 tasks"                       },
+  { id: "tasks_500",    icon: "🏗️", name: "Foundation Set",    desc: "Complete 500 tasks"                       },
+  { id: "tasks_1000",   icon: "🏛️", name: "Monument Maker",    desc: "Complete 1,000 tasks"                     },
   { id: "streak_7",     icon: "📈", name: "On a Roll",         desc: "7-day streak on any task"                  },
+  { id: "streak_14",    icon: "🔁", name: "Two Week Lock",     desc: "14-day streak on any task"                 },
   { id: "streak_30",    icon: "💪", name: "Iron Discipline",   desc: "30-day streak on any task"                 },
+  { id: "streak_60",    icon: "🏋️", name: "Sixty Strong",      desc: "60-day streak on any task"                 },
   { id: "streak_90",    icon: "🔩", name: "Iron Will",         desc: "90-day streak on any task"                 },
+  { id: "streak_180",   icon: "🧭", name: "Half-Year Hold",    desc: "180-day streak on any task"                },
+  { id: "streak_365",   icon: "🏆", name: "Year Unbroken",     desc: "365-day streak on any task"                },
+  { id: "activity_7",   icon: "🗓️", name: "Daily Motion",      desc: "Complete any task 7 days in a row"         },
+  { id: "activity_30",  icon: "📆", name: "Month in Motion",   desc: "Complete any task 30 days in a row"        },
   { id: "pts_100",      icon: "💯", name: "Century Club",      desc: "Earn 100 lifetime points"                  },
   { id: "pts_500",      icon: "⚡", name: "Point Collector",   desc: "Earn 500 lifetime points"                  },
+  { id: "pts_1000",     icon: "💥", name: "Four Figures",      desc: "Earn 1,000 lifetime points"                },
   { id: "pts_2000",     icon: "🔥", name: "Point Machine",     desc: "Earn 2,000 lifetime points"                },
+  { id: "pts_5000",     icon: "🚀", name: "Lift Off",          desc: "Earn 5,000 lifetime points"                },
   { id: "pts_10000",    icon: "💎", name: "Point Master",      desc: "Earn 10,000 lifetime points"               },
+  { id: "pts_25000",    icon: "🏦", name: "Point Fortune",     desc: "Earn 25,000 lifetime points"               },
+  { id: "pts_50000",    icon: "🌠", name: "Meteoric",          desc: "Earn 50,000 lifetime points"               },
+  { id: "pts_100000",   icon: "🌌", name: "Six-Figure Score",  desc: "Earn 100,000 lifetime points"              },
+  { id: "great_week",   icon: "👍", name: "Great Start",       desc: "Complete one Great Week"                   },
+  { id: "great_4w",     icon: "📘", name: "Great Month",       desc: "Complete 4 Great Weeks"                    },
+  { id: "great_13w",    icon: "📚", name: "Great Quarter",     desc: "Complete 13 Great Weeks"                   },
+  { id: "great_26w",    icon: "🧮", name: "Great Half",        desc: "Complete 26 Great Weeks"                   },
+  { id: "great_52w",    icon: "🗂️", name: "Great Year",        desc: "Complete 52 Great Weeks"                   },
+  { id: "great_100w",   icon: "🪙", name: "Great Century",     desc: "Complete 100 Great Weeks"                  },
+  { id: "excellent_week", icon: "🏵️", name: "Excellent Start", desc: "Complete one Excellent Week"               },
+  { id: "excellent_4w", icon: "🎖️", name: "Excellent Month",   desc: "Complete 4 Excellent Weeks"                },
+  { id: "excellent_13w",icon: "🏅", name: "Excellent Quarter", desc: "Complete 13 Excellent Weeks"               },
+  { id: "excellent_26w",icon: "🥇", name: "Excellent Half",    desc: "Complete 26 Excellent Weeks"               },
+  { id: "excellent_52w",icon: "💫", name: "Excellent Year",    desc: "Complete 52 Excellent Weeks"               },
   { id: "perfect_week", icon: "⭐", name: "Week Warrior",      desc: "Complete one perfect baseline week"        },
   { id: "perfect_4w",   icon: "🌟", name: "Monthly Momentum",  desc: "4 perfect baseline weeks"                  },
   { id: "perfect_13w",  icon: "📅", name: "Quarter Strong",    desc: "13 perfect baseline weeks"                 },
   { id: "perfect_26w",  icon: "🗓️", name: "Half Year Hero",   desc: "26 perfect baseline weeks"                 },
   { id: "perfect_52w",  icon: "👑", name: "Full Year",         desc: "52 perfect baseline weeks"                 },
+  { id: "perfect_100w", icon: "🔱", name: "Perfect Century",   desc: "100 perfect baseline weeks"                },
   { id: "all_tasks_day",icon: "✨", name: "Full House",        desc: "Complete every active task in one day"     },
+  { id: "all_tasks_7",  icon: "💡", name: "Full Week Energy",  desc: "Complete every active task on 7 days"      },
+  { id: "all_tasks_30", icon: "🔆", name: "Thirty Full Days",  desc: "Complete every active task on 30 days"     },
   { id: "bonus_10",     icon: "🎁", name: "Bonus Hunter",      desc: "Earn bonus points 10 times"                },
+  { id: "bonus_50",     icon: "💰", name: "Bonus Banker",      desc: "Earn bonus points 50 times"                },
+  { id: "bonus_100",    icon: "📈", name: "Bonus Engine",      desc: "Earn bonus points 100 times"               },
+  { id: "bonus_500",    icon: "💹", name: "Bonus Tycoon",      desc: "Earn bonus points 500 times"               },
   { id: "freeze_used",  icon: "🛡️", name: "Grace Day",        desc: "Use a streak freeze for the first time"    },
+  { id: "daily_perfect_7", icon: "🔷", name: "Perfect Weekline", desc: "7-day daily perfect streak"              },
+  { id: "daily_perfect_30", icon: "🔶", name: "Perfect Monthline", desc: "30-day daily perfect streak"           },
+  { id: "level_5",      icon: "🎚️", name: "Committed Climber", desc: "Reach level 5"                             },
   { id: "level_10",     icon: "🏅", name: "Halfway There",     desc: "Reach level 10"                            },
+  { id: "level_15",     icon: "🏵️", name: "Upper Tier",        desc: "Reach level 15"                            },
   { id: "level_20",     icon: "🌈", name: "Transcendent",      desc: "Reach max level 20"                        },
 ];
 
@@ -926,6 +963,13 @@ function App() {
     return count;
   }, [tasks, logs]);
 
+  const totalAllTasksDays = useMemo(() => {
+    if (activeTasks.length === 0) return 0;
+    return Object.keys(logs).filter((date) =>
+      activeTasks.every((task) => getTaskLog(task.id, date).completed)
+    ).length;
+  }, [activeTasks, tasks, logs]);
+
   // Streak per task, accounting for used freezes
   const getTaskDailyStreak = useCallback((taskId, asOfDate) => {
     let streak = 0;
@@ -1027,24 +1071,61 @@ function App() {
     const earn = (id) => { if (!earnedBadges[id]) newBadges[id] = today; };
     const totalCompletions = Object.values(logs).reduce((sum, d) => sum + Object.values(d || {}).filter((l) => l?.completed).length, 0);
     if (totalCompletions >= 1) earn("first_task");
+    if (totalCompletions >= 10) earn("tasks_10");
+    if (totalCompletions >= 50) earn("tasks_50");
+    if (totalCompletions >= 100) earn("tasks_100");
+    if (totalCompletions >= 500) earn("tasks_500");
+    if (totalCompletions >= 1000) earn("tasks_1000");
     if (maxTaskStreak >= 7) earn("streak_7");
+    if (maxTaskStreak >= 14) earn("streak_14");
     if (maxTaskStreak >= 30) earn("streak_30");
+    if (maxTaskStreak >= 60) earn("streak_60");
     if (maxTaskStreak >= 90) earn("streak_90");
+    if (maxTaskStreak >= 180) earn("streak_180");
+    if (maxTaskStreak >= 365) earn("streak_365");
+    if (activityStreak >= 7) earn("activity_7");
+    if (activityStreak >= 30) earn("activity_30");
     if (lifetimePoints >= 100) earn("pts_100");
     if (lifetimePoints >= 500) earn("pts_500");
+    if (lifetimePoints >= 1000) earn("pts_1000");
     if (lifetimePoints >= 2000) earn("pts_2000");
+    if (lifetimePoints >= 5000) earn("pts_5000");
     if (lifetimePoints >= 10000) earn("pts_10000");
+    if (lifetimePoints >= 25000) earn("pts_25000");
+    if (lifetimePoints >= 50000) earn("pts_50000");
+    if (lifetimePoints >= 100000) earn("pts_100000");
+    if (totalGreatWeeks >= 1) earn("great_week");
+    if (totalGreatWeeks >= 4) earn("great_4w");
+    if (totalGreatWeeks >= 13) earn("great_13w");
+    if (totalGreatWeeks >= 26) earn("great_26w");
+    if (totalGreatWeeks >= 52) earn("great_52w");
+    if (totalGreatWeeks >= 100) earn("great_100w");
+    if (totalExcellentWeeks >= 1) earn("excellent_week");
+    if (totalExcellentWeeks >= 4) earn("excellent_4w");
+    if (totalExcellentWeeks >= 13) earn("excellent_13w");
+    if (totalExcellentWeeks >= 26) earn("excellent_26w");
+    if (totalExcellentWeeks >= 52) earn("excellent_52w");
     if (totalPerfectWeeks >= 1) earn("perfect_week");
     if (totalPerfectWeeks >= 4) earn("perfect_4w");
     if (totalPerfectWeeks >= 13) earn("perfect_13w");
     if (totalPerfectWeeks >= 26) earn("perfect_26w");
     if (totalPerfectWeeks >= 52) earn("perfect_52w");
+    if (totalPerfectWeeks >= 100) earn("perfect_100w");
     if (allTasksCompletedToday) earn("all_tasks_day");
+    if (totalAllTasksDays >= 7) earn("all_tasks_7");
+    if (totalAllTasksDays >= 30) earn("all_tasks_30");
     if (totalBonusEarned >= 10) earn("bonus_10");
+    if (totalBonusEarned >= 50) earn("bonus_50");
+    if (totalBonusEarned >= 100) earn("bonus_100");
+    if (totalBonusEarned >= 500) earn("bonus_500");
+    if (dailyPerfectStreak >= 7) earn("daily_perfect_7");
+    if (dailyPerfectStreak >= 30) earn("daily_perfect_30");
+    if (currentLevelData.level >= 5) earn("level_5");
     if (currentLevelData.level >= 10) earn("level_10");
+    if (currentLevelData.level >= 15) earn("level_15");
     if (currentLevelData.level >= 20) earn("level_20");
     if (Object.keys(newBadges).length > 0) setEarnedBadges((prev) => ({ ...prev, ...newBadges }));
-  }, [logs, lifetimePoints, totalPerfectWeeks, maxTaskStreak, totalBonusEarned, currentLevelData]);
+  }, [logs, lifetimePoints, totalGreatWeeks, totalExcellentWeeks, totalPerfectWeeks, maxTaskStreak, activityStreak, dailyPerfectStreak, totalAllTasksDays, totalBonusEarned, currentLevelData]);
 
   // Update personal records
   useEffect(() => {
