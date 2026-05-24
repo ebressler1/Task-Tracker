@@ -191,7 +191,6 @@ function getWeekTotalPoints(activeTasks, tasks, logs, weekStart) {
     total += baseline + extra;
   });
 
-  const weekEnd = dates[6];
   const weeklyAdjustment = activeTasks.reduce((sum, task) => {
     const completions = dates.filter((date) => {
       const log = logs[date]?.[task.id] || { completed: false, extra: false };
@@ -237,9 +236,10 @@ function buildCumulativeWeekData(activeTasks, tasks, logs, weekStart) {
 //   greatPct     — % of past weeks that were Great-or-better (ignored until ≥2 tracked weeks)
 //   perfectPct   — % of past weeks that were Perfect (only required at levels 18–20)
 //
-// A "Great Week": ≤1 dropped task per category, no task done 0× (unless exempt).
+// A "Great Week": <=1 dropped task per category.
+// An "Excellent Week": Great Week criteria, plus no non-exempt task done 0x.
 // Exempt task: weeklyGoal===1 AND dailyPoints>20.
-// Nearly Perfect and Perfect weeks automatically count as Great.
+// Perfect weeks automatically count as Excellent and Great.
 const LEVELS = [
   { level: 1,  name: "Newcomer",     lifetimePts: 0,       recentPts: 0,      greatWeeks: 0,   greatPct: 0,  perfectPct: 0  },
   { level: 2,  name: "Beginner",     lifetimePts: 200,     recentPts: 80,     greatWeeks: 1,   greatPct: 20, perfectPct: 0  },
@@ -309,6 +309,7 @@ function App() {
   const [personalRecords, setPersonalRecords] = useState({ bestDayPoints: 0, bestWeekPoints: 0, longestStreak: 0 });
   const [completingTaskId, setCompletingTaskId] = useState(null);
   const [completingPoints, setCompletingPoints] = useState(0);
+  const [greatWeekInfoVisible, setGreatWeekInfoVisible] = useState(false);
 
 
   const emptyForm = {
@@ -444,14 +445,6 @@ function App() {
     }));
   };
 
-  const calculateDailyPointsForTask = (taskId, date) => {
-    const task = tasks.find((t) => t.id === taskId);
-    if (!task) return 0;
-    const log = getTaskLog(taskId, date);
-    if (!log.completed) return 0;
-    return task.dailyPoints + (log.extra ? task.extraBonus : 0);
-  };
-
   const calculateBaselinePointsForTask = (taskId, date) => {
     const task = tasks.find((t) => t.id === taskId);
     if (!task) return 0;
@@ -507,29 +500,19 @@ function App() {
     );
   };
 
-  const getWeeklyMissedGoalCount = (weekAnchorDate) => {
-    return activeTasks.filter(
-      (task) => getWeeklyCompletionCount(task, weekAnchorDate) < task.weeklyGoal
-    ).length;
-  };
-
-  const isNearlyPerfectWeek = (weekAnchorDate) => {
-    if (activeTasks.length === 0) return false;
-    return getWeeklyMissedGoalCount(weekAnchorDate) === 1;
-  };
-
   // A task is exempt from the zero-completion rule if it's a big once-a-week task
   const isExemptTask = (task) => task.weeklyGoal === 1 && task.dailyPoints > 20;
 
-  // Great Week: no non-exempt task done 0×, AND at most 1 task missed per category.
-  // Nearly-Perfect (≤1 miss total) and Perfect weeks automatically qualify.
-  const isGreatWeek = (weekAnchorDate) => {
-    if (activeTasks.length === 0) return false;
-    // Fail immediately if any non-exempt task was done zero times
-    const anyZeroed = activeTasks.some(
+  const hasZeroedNonExemptTask = (weekAnchorDate) => {
+    return activeTasks.some(
       (task) => !isExemptTask(task) && getWeeklyCompletionCount(task, weekAnchorDate) === 0
     );
-    if (anyZeroed) return false;
+  };
+
+  // Great Week: at most 1 dropped task per category.
+  // Excellent and Perfect weeks automatically qualify.
+  const isGreatWeek = (weekAnchorDate) => {
+    if (activeTasks.length === 0) return false;
     // At most 1 dropped task per category
     const groups = {};
     activeTasks.forEach((task) => {
@@ -540,6 +523,11 @@ function App() {
     return Object.values(groups).every((catTasks) =>
       catTasks.filter((t) => getWeeklyCompletionCount(t, weekAnchorDate) < t.weeklyGoal).length <= 1
     );
+  };
+
+  const isExcellentWeek = (weekAnchorDate) => {
+    if (activeTasks.length === 0) return false;
+    return isGreatWeek(weekAnchorDate) && !hasZeroedNonExemptTask(weekAnchorDate);
   };
 
   const allLoggedDates = useMemo(() => Object.keys(logs).sort(), [logs]);
@@ -873,7 +861,7 @@ function App() {
     return Math.round((perfectCount / pastWeeks.length) * 100);
   }, [activeTasks, tasks, logs, recentWeekStarts, currentWeekStart]);
 
-  // Great week count — includes Great, Nearly-Perfect, and Perfect weeks
+  // Great week count — includes Great, Excellent, and Perfect weeks
   const totalGreatWeeks = useMemo(() => {
     if (activeTasks.length === 0) return 0;
     let count = 0;
@@ -885,13 +873,13 @@ function App() {
     return count;
   }, [activeTasks, tasks, logs, recentWeekStarts, currentWeekStart]);
 
-  const totalNearlyPerfectWeeks = useMemo(() => {
+  const totalExcellentWeeks = useMemo(() => {
     if (activeTasks.length === 0) return 0;
     let count = 0;
     recentWeekStarts.forEach((weekStart) => {
       if (weekStart >= currentWeekStart) return;
       const weekEnd = getWeekDates(weekStart)[6];
-      if (isNearlyPerfectWeek(weekEnd)) count++;
+      if (isExcellentWeek(weekEnd)) count++;
     });
     return count;
   }, [activeTasks, tasks, logs, recentWeekStarts, currentWeekStart]);
@@ -954,6 +942,71 @@ function App() {
   const maxTaskStreak = useMemo(() => {
     return activeTasks.reduce((max, task) => Math.max(max, getTaskDailyStreak(task.id, todayString())), 0);
   }, [activeTasks, getTaskDailyStreak]);
+
+  const getTaskLongestStreak = useCallback((taskId) => {
+    const trackedDates = new Set(Object.keys(logs));
+    (usedFreezes[taskId] || []).forEach((date) => trackedDates.add(date));
+    if (trackedDates.size === 0) return 0;
+
+    const sortedDates = [...trackedDates].sort();
+    let cursor = sortedDates[0];
+    const end = todayString();
+    let current = 0;
+    let longest = 0;
+
+    while (cursor <= end) {
+      const log = getTaskLog(taskId, cursor);
+      const frozen = (usedFreezes[taskId] || []).includes(cursor);
+      if (log.completed || frozen) {
+        current += 1;
+        longest = Math.max(longest, current);
+      } else {
+        current = 0;
+      }
+      cursor = shiftDate(cursor, 1);
+    }
+
+    return longest;
+  }, [logs, usedFreezes, getTaskLog]);
+
+  const longestTaskStreak = useMemo(() => {
+    return tasks.reduce(
+      (best, task) => {
+        const longest = getTaskLongestStreak(task.id);
+        const activeStreak = getTaskDailyStreak(task.id, todayString());
+        if (longest > best.days) {
+          return {
+            days: longest,
+            taskName: task.name || "Unnamed task",
+            isStillActive: longest > 0 && activeStreak === longest,
+          };
+        }
+        return best;
+      },
+      { days: 0, taskName: "No task yet", isStillActive: false }
+    );
+  }, [tasks, getTaskLongestStreak, getTaskDailyStreak]);
+
+  const longestActiveTaskStreak = useMemo(() => {
+    return activeTasks.reduce(
+      (best, task) => {
+        const days = getTaskDailyStreak(task.id, todayString());
+        if (days > best.days) return { days, taskName: task.name || "Unnamed task" };
+        return best;
+      },
+      { days: 0, taskName: "No active streak" }
+    );
+  }, [activeTasks, getTaskDailyStreak]);
+
+  const showGreatWeekInfo = () => {
+    setGreatWeekInfoVisible(true);
+  };
+
+  useEffect(() => {
+    if (!greatWeekInfoVisible) return undefined;
+    const timer = setTimeout(() => setGreatWeekInfoVisible(false), 4500);
+    return () => clearTimeout(timer);
+  }, [greatWeekInfoVisible]);
 
   // Award freeze when current week becomes perfect
   useEffect(() => {
@@ -1382,16 +1435,8 @@ function App() {
                   <div className="task-category-grid">
                     {tasksInCategory.map((task) => {
                       const log = getTaskLog(task.id, selectedDate);
-                      const points = calculateDailyPointsForTask(task.id, selectedDate);
                       const weeklyCount = getWeeklyCompletionCount(task, selectedDate);
                       const weeklyStatus = getWeeklyStatus(task, selectedDate);
-                      const weeklyStatusLabel =
-                        weeklyStatus === "green"
-                          ? "Weekly Goal Met"
-                          : weeklyStatus === "yellow"
-                          ? "Weekly Goal Possible"
-                          : "Weekly Goal Missed";
-
                       const shortStatusLabel =
                         weeklyStatus === "green" ? "Met" :
                         weeklyStatus === "yellow" ? "On track" : "Missed";
@@ -1700,24 +1745,6 @@ function App() {
             {/* Personal Records + Streaks + Freezes row */}
             <div className="stats-grid stats-grid-three">
               <div className="card stat-card">
-                <div className="stat-label">Great Weeks</div>
-                <div className="stat-value">{totalGreatWeeks}</div>
-                <div className="stat-subvalue">great-or-better weeks</div>
-              </div>
-              <div className="card stat-card">
-                <div className="stat-label">Nearly Perfect Weeks</div>
-                <div className="stat-value">{totalNearlyPerfectWeeks}</div>
-                <div className="stat-subvalue">one missed weekly goal</div>
-              </div>
-              <div className="card stat-card">
-                <div className="stat-label">Perfect Weeks</div>
-                <div className="stat-value">{totalPerfectWeeks}</div>
-                <div className="stat-subvalue">all weekly goals met</div>
-              </div>
-            </div>
-
-            <div className="stats-grid stats-grid-three">
-              <div className="card stat-card">
                 <div className="stat-label">Best Day</div>
                 <div className="stat-value">{personalRecords.bestDayPoints}</div>
                 <div className="stat-subvalue">points in one day</div>
@@ -1729,8 +1756,42 @@ function App() {
               </div>
               <div className="card stat-card">
                 <div className="stat-label">Longest Streak</div>
-                <div className="stat-value">{personalRecords.longestStreak}</div>
-                <div className="stat-subvalue">consecutive days</div>
+                <div className="stat-value">{longestTaskStreak.days}</div>
+                <div className="stat-subvalue">{longestTaskStreak.taskName}</div>
+                <div className="stat-subvalue">{longestTaskStreak.isStillActive ? "Still active" : "No longer active"}</div>
+              </div>
+            </div>
+
+            <div className="stats-grid stats-grid-single">
+              <div className="card stat-card">
+                <div className="stat-label">Longest Active Streak</div>
+                <div className="stat-value">{longestActiveTaskStreak.days}</div>
+                <div className="stat-subvalue">{longestActiveTaskStreak.taskName}</div>
+              </div>
+            </div>
+
+            <div className="week-counter-wrap">
+              {greatWeekInfoVisible && (
+                <div className="info-popover" role="status">
+                  A Great Week means each category has no more than one active task miss its weekly goal.
+                </div>
+              )}
+              <div className="stats-grid stats-grid-three">
+                <button className="card stat-card stat-card-button" type="button" onClick={showGreatWeekInfo}>
+                  <div className="stat-label">Great Weeks</div>
+                  <div className="stat-value">{totalGreatWeeks}</div>
+                  <div className="stat-subvalue">tap for criteria</div>
+                </button>
+                <div className="card stat-card">
+                  <div className="stat-label">Excellent Weeks</div>
+                  <div className="stat-value">{totalExcellentWeeks}</div>
+                  <div className="stat-subvalue">great, with no zeroed tasks</div>
+                </div>
+                <div className="card stat-card">
+                  <div className="stat-label">Perfect Weeks</div>
+                  <div className="stat-value">{totalPerfectWeeks}</div>
+                  <div className="stat-subvalue">all weekly goals met</div>
+                </div>
               </div>
             </div>
 
@@ -1802,7 +1863,6 @@ function App() {
                     })}
                   </div>
                   {activeTasks.map((task) => {
-                    const weekEnd = getWeekDates(currentWeekStart)[6];
                     return (
                       <div key={task.id} className="heatmap-task-row">
                         <span className="heatmap-row-label" title={task.name}>{task.name}</span>
