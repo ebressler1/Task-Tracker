@@ -268,6 +268,34 @@ body.theme-dark .nav-button {
   box-shadow: 0 8px 20px rgba(24, 143, 167, 0.22);
 }
 
+.subnav-card {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow);
+}
+
+.subnav-button {
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--text-muted);
+  padding: 8px 12px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.subnav-button.active {
+  background: var(--button-subtle-bg);
+  border-color: var(--border);
+  color: var(--text);
+}
+
 .theme-toggle {
   border: 1px solid var(--border);
   background: var(--bg-elevated);
@@ -1425,7 +1453,7 @@ body.theme-dark .task-form-inline {
     align-items: stretch;
   }
 
-  /* Nav: 3-column grid → row 1: Activities/Weekly/Long, row 2: Dark+SignOut right-aligned */
+  /* Nav: primary sections on the first row, utility buttons below. */
   .top-bar-actions {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;

@@ -1457,37 +1457,19 @@ function App() {
               className={page === "activities" ? "nav-button active" : "nav-button"}
               onClick={() => setPage("activities")}
             >
-              Activities
+              Task Log
             </button>
             <button
-              className={page === "weekly" ? "nav-button active" : "nav-button"}
+              className={["weekly", "review"].includes(page) ? "nav-button active" : "nav-button"}
               onClick={() => setPage("weekly")}
             >
-              Weekly Streaks
+              Weekly Tracking
             </button>
             <button
-              className={page === "review" ? "nav-button active" : "nav-button"}
-              onClick={() => setPage("review")}
-            >
-              Weekly Review
-            </button>
-            <button
-              className={page === "calendar" ? "nav-button active" : "nav-button"}
-              onClick={() => setPage("calendar")}
-            >
-              Calendar
-            </button>
-            <button
-              className={page === "milestones" ? "nav-button active" : "nav-button"}
-              onClick={() => setPage("milestones")}
-            >
-              Milestones
-            </button>
-            <button
-              className={page === "long" ? "nav-button active" : "nav-button"}
+              className={["long", "calendar", "milestones"].includes(page) ? "nav-button active" : "nav-button"}
               onClick={() => setPage("long")}
             >
-              Longterm
+              Longterm Tracking
             </button>
             <button
               className="theme-toggle"
@@ -1930,6 +1912,11 @@ function App() {
 
         {page === "review" && (
           <>
+            <div className="subnav-card">
+              <button className={page === "weekly" ? "subnav-button active" : "subnav-button"} onClick={() => setPage("weekly")}>Weekly Streaks</button>
+              <button className={page === "review" ? "subnav-button active" : "subnav-button"} onClick={() => setPage("review")}>Weekly Review</button>
+            </div>
+
             <div className="stats-grid stats-grid-four">
               <div className="card stat-card">
                 <div className="stat-label">Week Status</div>
@@ -2002,6 +1989,12 @@ function App() {
 
         {page === "calendar" && (
           <>
+            <div className="subnav-card">
+              <button className={page === "long" ? "subnav-button active" : "subnav-button"} onClick={() => setPage("long")}>Level Tracker</button>
+              <button className={page === "calendar" ? "subnav-button active" : "subnav-button"} onClick={() => setPage("calendar")}>Calendar</button>
+              <button className={page === "milestones" ? "subnav-button active" : "subnav-button"} onClick={() => setPage("milestones")}>Milestones</button>
+            </div>
+
             <div className="card">
               <div className="section-header">
                 <button className="date-arrow" onClick={() => setSelectedDate((prev) => {
@@ -2048,6 +2041,12 @@ function App() {
 
         {page === "milestones" && (
           <>
+            <div className="subnav-card">
+              <button className={page === "long" ? "subnav-button active" : "subnav-button"} onClick={() => setPage("long")}>Level Tracker</button>
+              <button className={page === "calendar" ? "subnav-button active" : "subnav-button"} onClick={() => setPage("calendar")}>Calendar</button>
+              <button className={page === "milestones" ? "subnav-button active" : "subnav-button"} onClick={() => setPage("milestones")}>Milestones</button>
+            </div>
+
             <div className="card">
               <h2>Milestones Timeline</h2>
               <div className="section-subtitle">A running history of earned achievements.</div>
@@ -2074,6 +2073,11 @@ function App() {
 
         {page === "weekly" && (
           <>
+            <div className="subnav-card">
+              <button className={page === "weekly" ? "subnav-button active" : "subnav-button"} onClick={() => setPage("weekly")}>Weekly Streaks</button>
+              <button className={page === "review" ? "subnav-button active" : "subnav-button"} onClick={() => setPage("review")}>Weekly Review</button>
+            </div>
+
             <div className="stats-grid stats-grid-three">
               <div className="card stat-card">
                 <div className="stat-label">Activity Streak</div>
@@ -2140,8 +2144,15 @@ function App() {
 
         {page === "long" && (
           <>
+            <div className="subnav-card">
+              <button className={page === "long" ? "subnav-button active" : "subnav-button"} onClick={() => setPage("long")}>Level Tracker</button>
+              <button className={page === "calendar" ? "subnav-button active" : "subnav-button"} onClick={() => setPage("calendar")}>Calendar</button>
+              <button className={page === "milestones" ? "subnav-button active" : "subnav-button"} onClick={() => setPage("milestones")}>Milestones</button>
+            </div>
+
             {/* Level card */}
             <div className="card level-card">
+              <h2>Level Tracker</h2>
               <div className="level-header">
                 <div>
                   <div className="level-badge">Level {currentLevelData.level}</div>
