@@ -1352,6 +1352,111 @@ body.theme-dark .task-form-inline {
   background: rgba(255, 255, 255, 0.04);
 }
 
+/* Long-term trackers */
+.longterm-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.longterm-card {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: var(--shadow);
+}
+
+.longterm-card.is-complete {
+  border-color: rgba(24, 143, 167, 0.45);
+  background: rgba(24, 143, 167, 0.05);
+}
+
+.longterm-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.longterm-card-header h3 {
+  margin: 0 0 4px;
+  font-size: 1rem;
+  color: var(--text);
+}
+
+.longterm-card-header span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.longterm-trophy {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid rgba(118, 159, 182, 0.35);
+  background: rgba(118, 159, 182, 0.1);
+  font-size: 1.35rem;
+}
+
+.longterm-progress-line {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.longterm-progress-line strong {
+  font-size: 1.4rem;
+  color: var(--text);
+}
+
+.longterm-progress-line span,
+.longterm-reward span {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.longterm-progress-bar-wrap {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(118, 159, 182, 0.16);
+}
+
+.longterm-progress-bar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #769fb6, #188fa7);
+  transition: width 0.25s ease;
+}
+
+.longterm-reward {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.longterm-reward strong {
+  font-size: 12px;
+  color: var(--text);
+  text-align: right;
+}
+
+.longterm-add-row {
+  display: grid;
+  grid-template-columns: minmax(70px, 1fr) auto auto;
+  gap: 8px;
+  margin-top: 14px;
+}
+
 /* Weekly goal heatmap */
 
 .heatmap-scroll {
@@ -1782,5 +1887,11 @@ body.theme-dark .task-form-inline {
   }
   .badges-grid {
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  }
+  .longterm-add-row {
+    grid-template-columns: 1fr 1fr;
+  }
+  .longterm-add-row .input {
+    grid-column: 1 / -1;
   }
 }
