@@ -342,6 +342,7 @@ function App() {
   const [weekInfoVisible, setWeekInfoVisible] = useState(null);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [longTermIncrements, setLongTermIncrements] = useState({});
+  const [formError, setFormError] = useState("");
 
 
   const emptyForm = {
@@ -1309,11 +1310,13 @@ function App() {
   const startAddTask = () => {
     setEditingTaskId(null);
     setForm(emptyForm);
+    setFormError("");
     setShowForm(true);
   };
 
   const startEditTask = (task) => {
     setEditingTaskId(task.id);
+    setFormError("");
     setShowForm(true);
     setForm({
       name: task.name,
@@ -1333,9 +1336,27 @@ function App() {
   };
 
   const saveTask = () => {
-    if (!form.name.trim()) return;
-
     const taskType = form.type === "longterm" ? "longterm" : "weekly";
+    const targetCount = Number(form.targetCount);
+    const currentCount = Number(form.currentCount || 0);
+
+    if (!form.name.trim()) {
+      setFormError("Enter a name for this task or tracker.");
+      return;
+    }
+    if (taskType === "longterm" && (!Number.isFinite(targetCount) || targetCount <= 0)) {
+      setFormError("Enter a target amount greater than zero.");
+      return;
+    }
+    if (taskType === "longterm" && (!Number.isFinite(currentCount) || currentCount < 0)) {
+      setFormError("Current progress cannot be negative.");
+      return;
+    }
+    if (taskType === "longterm" && !form.reward.trim()) {
+      setFormError("Add the reward that this tracker will unlock.");
+      return;
+    }
+
     const taskPayload = {
       name: form.name.trim(),
       category: form.category.trim(),
@@ -1346,8 +1367,8 @@ function App() {
       extraBonus: taskType === "weekly" ? Number(form.extraBonus) || 0 : 0,
       weeklyGoal: taskType === "weekly" ? Number(form.weeklyGoal) || 0 : 0,
       weeklyBonus: taskType === "weekly" ? Number(form.weeklyBonus) || 0 : 0,
-      targetCount: taskType === "longterm" ? Number(form.targetCount) || 0 : 0,
-      currentCount: taskType === "longterm" ? Number(form.currentCount) || 0 : 0,
+      targetCount: taskType === "longterm" ? targetCount : 0,
+      currentCount: taskType === "longterm" ? currentCount : 0,
       unitLabel: taskType === "longterm" ? form.unitLabel.trim() : "",
       reward: taskType === "longterm" ? form.reward.trim() : "",
     };
@@ -1371,12 +1392,14 @@ function App() {
 
     setEditingTaskId(null);
     setForm(emptyForm);
+    setFormError("");
     setShowForm(false);
   };
 
   const cancelEdit = () => {
     setEditingTaskId(null);
     setForm(emptyForm);
+    setFormError("");
     setShowForm(false);
   };
 
@@ -1406,7 +1429,7 @@ function App() {
 
   const updateLongTermProgress = (taskId, amount) => {
     const delta = Number(amount) || 0;
-    if (delta === 0) return;
+    if (delta <= 0) return;
 
     setTasks((prev) =>
       prev.map((task) => {
@@ -1657,19 +1680,19 @@ function App() {
                     {form.type === "longterm" ? (
                       <>
                         <div className="field-group">
-                          <label className="field-label">Target Amount</label>
-                          <input className="input" type="number" placeholder="1000" value={form.targetCount} onChange={(e) => setForm({ ...form, targetCount: e.target.value })} />
+                          <label className="field-label">Target Amount (required)</label>
+                          <input className="input" type="number" min="1" placeholder="1000" value={form.targetCount} onChange={(e) => setForm({ ...form, targetCount: e.target.value })} />
                         </div>
                         <div className="field-group">
                           <label className="field-label">Current Progress</label>
-                          <input className="input" type="number" placeholder="0" value={form.currentCount} onChange={(e) => setForm({ ...form, currentCount: e.target.value })} />
+                          <input className="input" type="number" min="0" placeholder="0" value={form.currentCount} onChange={(e) => setForm({ ...form, currentCount: e.target.value })} />
                         </div>
                         <div className="field-group">
                           <label className="field-label">Unit Label</label>
                           <input className="input" placeholder="reviews" value={form.unitLabel} onChange={(e) => setForm({ ...form, unitLabel: e.target.value })} />
                         </div>
                         <div className="field-group">
-                          <label className="field-label">Reward Trophy</label>
+                          <label className="field-label">Reward Trophy (required)</label>
                           <input className="input" placeholder="Buy the fancy notebook" value={form.reward} onChange={(e) => setForm({ ...form, reward: e.target.value })} />
                         </div>
                       </>
@@ -1702,6 +1725,7 @@ function App() {
                       </>
                     )}
                   </div>
+                  {formError && <div className="form-error" role="alert">{formError}</div>}
                   <div className="task-controls">
                     <button className="small-button" onClick={saveTask}>Add Task</button>
                     <button className="small-button archive-button" onClick={cancelEdit}>Cancel</button>
@@ -1830,19 +1854,19 @@ function App() {
                               {form.type === "longterm" ? (
                                 <>
                                   <div className="field-group">
-                                    <label className="field-label">Target Amount</label>
-                                    <input className="input" type="number" placeholder="1000" value={form.targetCount} onChange={(e) => setForm({ ...form, targetCount: e.target.value })} />
+                                    <label className="field-label">Target Amount (required)</label>
+                                    <input className="input" type="number" min="1" placeholder="1000" value={form.targetCount} onChange={(e) => setForm({ ...form, targetCount: e.target.value })} />
                                   </div>
                                   <div className="field-group">
                                     <label className="field-label">Current Progress</label>
-                                    <input className="input" type="number" placeholder="0" value={form.currentCount} onChange={(e) => setForm({ ...form, currentCount: e.target.value })} />
+                                    <input className="input" type="number" min="0" placeholder="0" value={form.currentCount} onChange={(e) => setForm({ ...form, currentCount: e.target.value })} />
                                   </div>
                                   <div className="field-group">
                                     <label className="field-label">Unit Label</label>
                                     <input className="input" placeholder="reviews" value={form.unitLabel} onChange={(e) => setForm({ ...form, unitLabel: e.target.value })} />
                                   </div>
                                   <div className="field-group">
-                                    <label className="field-label">Reward Trophy</label>
+                                    <label className="field-label">Reward Trophy (required)</label>
                                     <input className="input" placeholder="Buy the fancy notebook" value={form.reward} onChange={(e) => setForm({ ...form, reward: e.target.value })} />
                                   </div>
                                 </>
@@ -1875,6 +1899,7 @@ function App() {
                                 </>
                               )}
                             </div>
+                            {formError && <div className="form-error" role="alert">{formError}</div>}
                             <div className="task-controls">
                               <button className="small-button" onClick={saveTask}>Save Changes</button>
                               <button className="small-button archive-button" onClick={cancelEdit}>Cancel</button>
@@ -1926,8 +1951,20 @@ function App() {
                           <strong>{currentCount.toLocaleString()}</strong>
                           <span>/ {targetCount.toLocaleString()} {task.unitLabel || "total"}</span>
                         </div>
-                        <div className="longterm-progress-bar-wrap">
+                        <div
+                          className="longterm-progress-bar-wrap"
+                          role="progressbar"
+                          aria-label={`${task.name} progress`}
+                          aria-valuemin={0}
+                          aria-valuemax={targetCount}
+                          aria-valuenow={Math.min(currentCount, targetCount)}
+                          aria-valuetext={`${currentCount.toLocaleString()} of ${targetCount.toLocaleString()} ${task.unitLabel || "total"}`}
+                        >
                           <div className="longterm-progress-bar" style={{ width: `${progressPercent}%` }} />
+                        </div>
+                        <div className="longterm-progress-status">
+                          <span>{progressPercent}% complete</span>
+                          {isComplete && <strong>Reward unlocked</strong>}
                         </div>
                         <div className="longterm-reward">
                           <span>Reward</span>
@@ -1938,6 +1975,7 @@ function App() {
                           <input
                             className="input"
                             type="number"
+                            min="1"
                             placeholder="Add"
                             value={incrementValue}
                             onChange={(e) => setLongTermIncrements((prev) => ({ ...prev, [task.id]: e.target.value }))}
@@ -1966,22 +2004,23 @@ function App() {
                               <input className="input" placeholder="Education" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
                             </div>
                             <div className="field-group">
-                              <label className="field-label">Target Amount</label>
-                              <input className="input" type="number" placeholder="1000" value={form.targetCount} onChange={(e) => setForm({ ...form, targetCount: e.target.value })} />
+                              <label className="field-label">Target Amount (required)</label>
+                              <input className="input" type="number" min="1" placeholder="1000" value={form.targetCount} onChange={(e) => setForm({ ...form, targetCount: e.target.value })} />
                             </div>
                             <div className="field-group">
                               <label className="field-label">Current Progress</label>
-                              <input className="input" type="number" placeholder="0" value={form.currentCount} onChange={(e) => setForm({ ...form, currentCount: e.target.value })} />
+                              <input className="input" type="number" min="0" placeholder="0" value={form.currentCount} onChange={(e) => setForm({ ...form, currentCount: e.target.value })} />
                             </div>
                             <div className="field-group">
                               <label className="field-label">Unit Label</label>
                               <input className="input" placeholder="reviews" value={form.unitLabel} onChange={(e) => setForm({ ...form, unitLabel: e.target.value })} />
                             </div>
                             <div className="field-group">
-                              <label className="field-label">Reward Trophy</label>
+                              <label className="field-label">Reward Trophy (required)</label>
                               <input className="input" placeholder="Buy the fancy notebook" value={form.reward} onChange={(e) => setForm({ ...form, reward: e.target.value })} />
                             </div>
                           </div>
+                          {formError && <div className="form-error" role="alert">{formError}</div>}
                           <div className="task-controls">
                             <button className="small-button" onClick={saveTask}>Save Changes</button>
                             <button className="small-button archive-button" onClick={cancelEdit}>Cancel</button>
