@@ -1352,6 +1352,13 @@ body.theme-dark .task-form-inline {
   background: rgba(255, 255, 255, 0.04);
 }
 
+.form-error {
+  margin: 12px 0;
+  color: var(--status-red-text);
+  font-size: 13px;
+  font-weight: 700;
+}
+
 /* Long-term trackers */
 .longterm-grid {
   display: grid;
@@ -1434,6 +1441,19 @@ body.theme-dark .task-form-inline {
   border-radius: 999px;
   background: linear-gradient(90deg, #769fb6, #188fa7);
   transition: width 0.25s ease;
+}
+
+.longterm-progress-status {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 6px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.longterm-progress-status strong {
+  color: var(--status-green-text);
 }
 
 .longterm-reward {
