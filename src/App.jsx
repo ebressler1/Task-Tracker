@@ -354,7 +354,7 @@ function App() {
     extraBonus: "",
     weeklyGoal: "",
     weeklyBonus: "",
-    type: "weekly",
+    type: "",
     targetCount: "",
     currentCount: "",
     unitLabel: "",
@@ -1189,14 +1189,8 @@ function App() {
   }, [earnedBadges, allBadges]);
 
   const showWeekInfo = (type) => {
-    setWeekInfoVisible(type);
+    setWeekInfoVisible((current) => current === type ? null : type);
   };
-
-  useEffect(() => {
-    if (!weekInfoVisible) return undefined;
-    const timer = setTimeout(() => setWeekInfoVisible(null), 5000);
-    return () => clearTimeout(timer);
-  }, [weekInfoVisible]);
 
   // Award freeze when current week becomes perfect
   useEffect(() => {
@@ -1336,10 +1330,14 @@ function App() {
   };
 
   const saveTask = () => {
-    const taskType = form.type === "longterm" ? "longterm" : "weekly";
+    const taskType = form.type;
     const targetCount = Number(form.targetCount);
     const currentCount = Number(form.currentCount || 0);
 
+    if (!taskType) {
+      setFormError("Choose Weekly or Cumulative to continue.");
+      return;
+    }
     if (!form.name.trim()) {
       setFormError("Enter a name for this task or tracker.");
       return;
@@ -1473,6 +1471,160 @@ function App() {
     updateTaskLog(taskId, selectedDate, { extra: !current.extra });
   };
 
+  const chooseTaskType = (type) => {
+    setForm((prev) => ({ ...prev, type }));
+    setFormError("");
+  };
+
+  const saveCustomCategory = () => {
+    const category = newCategory.trim();
+    if (!category) return;
+    setCustomCategories((prev) => prev.includes(category) ? prev : [...prev, category]);
+    setForm((prev) => ({ ...prev, category }));
+    setNewCategory("");
+    setShowCustomCategoryInput(false);
+  };
+
+  const renderTaskForm = ({ title, submitLabel }) => (
+    <div className="task-form-inline">
+      <div className="task-form-heading">
+        <div>
+          <span className="section-kicker">{editingTaskId ? "Edit task" : "New task"}</span>
+          <h3>{title}</h3>
+        </div>
+        <button className="icon-button" type="button" onClick={cancelEdit} aria-label="Close task form" title="Close">
+          ×
+        </button>
+      </div>
+
+      <div className="field-group task-type-field">
+        <span className="field-label">Task type</span>
+        <div className="task-type-segmented" role="group" aria-label="Task type">
+          <button
+            className={`task-type-option ${form.type === "weekly" ? "active" : ""}`}
+            type="button"
+            aria-pressed={form.type === "weekly"}
+            onClick={() => chooseTaskType("weekly")}
+          >
+            <strong>Weekly</strong>
+            <span>Daily completion and weekly points</span>
+          </button>
+          <button
+            className={`task-type-option ${form.type === "longterm" ? "active" : ""}`}
+            type="button"
+            aria-pressed={form.type === "longterm"}
+            onClick={() => chooseTaskType("longterm")}
+          >
+            <strong>Cumulative</strong>
+            <span>Progress toward a reward trophy</span>
+          </button>
+        </div>
+      </div>
+
+      {form.type && (
+        <>
+          <div className="labeled-form-grid task-form-fields">
+            <div className="field-group">
+              <label className="field-label" htmlFor="task-name">Task name</label>
+              <input
+                id="task-name"
+                className="input"
+                placeholder={form.type === "longterm" ? "Anki Reviews" : "Workout"}
+                value={form.name}
+                onChange={(e) => setForm({ ...form, name: e.target.value })}
+              />
+            </div>
+            <div className="field-group">
+              <label className="field-label" htmlFor="task-category">Category</label>
+              <select
+                id="task-category"
+                className="input"
+                value={form.category}
+                onChange={(e) => {
+                  if (e.target.value === "__custom__") setShowCustomCategoryInput(true);
+                  else {
+                    setForm({ ...form, category: e.target.value });
+                    setShowCustomCategoryInput(false);
+                  }
+                }}
+              >
+                <option value="">Select category</option>
+                {[...DEFAULT_CATEGORIES, ...customCategories].map((category) => (
+                  <option key={category} value={category}>{category}</option>
+                ))}
+                <option value="__custom__">Add custom category</option>
+              </select>
+              {showCustomCategoryInput && (
+                <div className="custom-category-row">
+                  <input
+                    className="input"
+                    placeholder="Category name"
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                  />
+                  <button className="small-button" type="button" onClick={saveCustomCategory}>Add</button>
+                </div>
+              )}
+            </div>
+
+            {form.type === "longterm" ? (
+              <>
+                <div className="field-group">
+                  <label className="field-label" htmlFor="target-count">Target amount</label>
+                  <input id="target-count" className="input" type="number" min="1" placeholder="1000" value={form.targetCount} onChange={(e) => setForm({ ...form, targetCount: e.target.value })} />
+                </div>
+                <div className="field-group">
+                  <label className="field-label" htmlFor="current-count">Starting progress</label>
+                  <input id="current-count" className="input" type="number" min="0" placeholder="0" value={form.currentCount} onChange={(e) => setForm({ ...form, currentCount: e.target.value })} />
+                </div>
+                <div className="field-group">
+                  <label className="field-label" htmlFor="unit-label">Unit</label>
+                  <input id="unit-label" className="input" placeholder="reviews" value={form.unitLabel} onChange={(e) => setForm({ ...form, unitLabel: e.target.value })} />
+                </div>
+                <div className="field-group">
+                  <label className="field-label" htmlFor="reward">Reward</label>
+                  <input id="reward" className="input" placeholder="Buy the fancy notebook" value={form.reward} onChange={(e) => setForm({ ...form, reward: e.target.value })} />
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="field-group">
+                  <label className="field-label" htmlFor="daily-goal">Daily goal</label>
+                  <input id="daily-goal" className="input" placeholder="30 minutes" value={form.dailyGoal} onChange={(e) => setForm({ ...form, dailyGoal: e.target.value })} />
+                </div>
+                <div className="field-group">
+                  <label className="field-label" htmlFor="daily-points">Daily points</label>
+                  <input id="daily-points" className="input" type="number" min="0" placeholder="10" value={form.dailyPoints} onChange={(e) => setForm({ ...form, dailyPoints: e.target.value })} />
+                </div>
+                <div className="field-group">
+                  <label className="field-label" htmlFor="extra-threshold">Bonus threshold</label>
+                  <input id="extra-threshold" className="input" placeholder="60 minutes" value={form.extraThreshold} onChange={(e) => setForm({ ...form, extraThreshold: e.target.value })} />
+                </div>
+                <div className="field-group">
+                  <label className="field-label" htmlFor="extra-bonus">Bonus points</label>
+                  <input id="extra-bonus" className="input" type="number" min="0" placeholder="5" value={form.extraBonus} onChange={(e) => setForm({ ...form, extraBonus: e.target.value })} />
+                </div>
+                <div className="field-group">
+                  <label className="field-label" htmlFor="weekly-goal">Weekly goal</label>
+                  <input id="weekly-goal" className="input" type="number" min="1" max="7" placeholder="3" value={form.weeklyGoal} onChange={(e) => setForm({ ...form, weeklyGoal: e.target.value })} />
+                </div>
+                <div className="field-group">
+                  <label className="field-label" htmlFor="weekly-bonus">Weekly bonus</label>
+                  <input id="weekly-bonus" className="input" type="number" min="0" placeholder="20" value={form.weeklyBonus} onChange={(e) => setForm({ ...form, weeklyBonus: e.target.value })} />
+                </div>
+              </>
+            )}
+          </div>
+          {formError && <div className="form-error" role="alert">{formError}</div>}
+          <div className="task-controls task-form-actions">
+            <button className="small-button" type="button" onClick={saveTask}>{submitLabel}</button>
+            <button className="text-button" type="button" onClick={cancelEdit}>Cancel</button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
   const handleSignIn = () => signInWithPopup(auth, googleProvider);
   const handleSignOut = () => {
     dataLoaded.current = false;
@@ -1547,7 +1699,7 @@ function App() {
               className={["long", "calendar", "milestones"].includes(page) ? "nav-button active" : "nav-button"}
               onClick={() => setPage("long")}
             >
-              Longterm Tracking
+              Progress
             </button>
             <button
               className="theme-toggle"
@@ -1624,116 +1776,29 @@ function App() {
               </div>
             </div>
 
-            <div className="card">
+            <div className="task-create-panel">
+              <div className="section-header">
+                <div>
+                  <span className="section-kicker">Task setup</span>
+                  <h2>Tasks</h2>
+                </div>
+                {!showForm && (
+                  <button className="small-button" type="button" onClick={startAddTask}>New Task</button>
+                )}
+              </div>
+              {showForm && !editingTaskId && renderTaskForm({ title: "Choose what you want to track", submitLabel: "Create task" })}
+            </div>
+
+            <div className="card task-section-card">
               <div className="section-header section-header-stack">
                 <div>
+                  <span className="section-kicker">This week</span>
                   <h2>Weekly Tasks</h2>
-                  <div className="section-subtitle">
-                    Grouped by category. Tap the check to complete the task for the selected day.
-                  </div>
                 </div>
-
-                <div className="task-controls">
-<button className="small-button" onClick={startAddTask}>
-                    New Task
-                  </button>
-                </div>
+                <span className="section-count">{activeTasks.length}</span>
               </div>
 
-              {showForm && !editingTaskId && (
-                <div className="task-form-inline">
-                  <h3 style={{margin: "0 0 14px"}}>New Task</h3>
-                  <div className="labeled-form-grid">
-                    <div className="field-group">
-                      <label className="field-label">Task Name</label>
-                      <input className="input" placeholder="Workout" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                    </div>
-                    <div className="field-group">
-                      <label className="field-label">Tracker Type</label>
-                      <select className="input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-                        <option value="weekly">Weekly Task</option>
-                        <option value="longterm">Long-Term Tracker</option>
-                      </select>
-                    </div>
-                    <div className="field-group">
-                      <label className="field-label">Category</label>
-                      <select className="input" value={form.category} onChange={(e) => {
-                        if (e.target.value === "__custom__") { setShowCustomCategoryInput(true); }
-                        else { setForm({ ...form, category: e.target.value }); setShowCustomCategoryInput(false); }
-                      }}>
-                        <option value="">Select category</option>
-                        {[...DEFAULT_CATEGORIES, ...customCategories].map((cat) => (<option key={cat} value={cat}>{cat}</option>))}
-                        <option value="__custom__">+ Add Custom</option>
-                      </select>
-                      {showCustomCategoryInput && (
-                        <div style={{ marginTop: "8px" }}>
-                          <input className="input" placeholder="Enter new category" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} />
-                          <button className="small-button" style={{ marginTop: "6px" }} onClick={() => {
-                            if (!newCategory.trim()) return;
-                            setCustomCategories([...customCategories, newCategory.trim()]);
-                            setForm({ ...form, category: newCategory.trim() });
-                            setNewCategory(""); setShowCustomCategoryInput(false);
-                          }}>Save Category</button>
-                        </div>
-                      )}
-                    </div>
-                    {form.type === "longterm" ? (
-                      <>
-                        <div className="field-group">
-                          <label className="field-label">Target Amount (required)</label>
-                          <input className="input" type="number" min="1" placeholder="1000" value={form.targetCount} onChange={(e) => setForm({ ...form, targetCount: e.target.value })} />
-                        </div>
-                        <div className="field-group">
-                          <label className="field-label">Current Progress</label>
-                          <input className="input" type="number" min="0" placeholder="0" value={form.currentCount} onChange={(e) => setForm({ ...form, currentCount: e.target.value })} />
-                        </div>
-                        <div className="field-group">
-                          <label className="field-label">Unit Label</label>
-                          <input className="input" placeholder="reviews" value={form.unitLabel} onChange={(e) => setForm({ ...form, unitLabel: e.target.value })} />
-                        </div>
-                        <div className="field-group">
-                          <label className="field-label">Reward Trophy (required)</label>
-                          <input className="input" placeholder="Buy the fancy notebook" value={form.reward} onChange={(e) => setForm({ ...form, reward: e.target.value })} />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="field-group">
-                          <label className="field-label">Daily Goal</label>
-                          <input className="input" placeholder="30 minutes" value={form.dailyGoal} onChange={(e) => setForm({ ...form, dailyGoal: e.target.value })} />
-                        </div>
-                        <div className="field-group">
-                          <label className="field-label">Daily Points</label>
-                          <input className="input" type="number" placeholder="10" value={form.dailyPoints} onChange={(e) => setForm({ ...form, dailyPoints: e.target.value })} />
-                        </div>
-                        <div className="field-group">
-                          <label className="field-label">Extra Threshold</label>
-                          <input className="input" placeholder="60 minutes" value={form.extraThreshold} onChange={(e) => setForm({ ...form, extraThreshold: e.target.value })} />
-                        </div>
-                        <div className="field-group">
-                          <label className="field-label">Extra Points</label>
-                          <input className="input" type="number" placeholder="5" value={form.extraBonus} onChange={(e) => setForm({ ...form, extraBonus: e.target.value })} />
-                        </div>
-                        <div className="field-group">
-                          <label className="field-label">Weekly Goal (times/week)</label>
-                          <input className="input" type="number" placeholder="3" value={form.weeklyGoal} onChange={(e) => setForm({ ...form, weeklyGoal: e.target.value })} />
-                        </div>
-                        <div className="field-group">
-                          <label className="field-label">Weekly Bonus Points</label>
-                          <input className="input" type="number" placeholder="20" value={form.weeklyBonus} onChange={(e) => setForm({ ...form, weeklyBonus: e.target.value })} />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                  {formError && <div className="form-error" role="alert">{formError}</div>}
-                  <div className="task-controls">
-                    <button className="small-button" onClick={saveTask}>Add Task</button>
-                    <button className="small-button archive-button" onClick={cancelEdit}>Cancel</button>
-                  </div>
-                </div>
-              )}
-
-              {activeTasks.length === 0 && !showForm && <p className="empty-text">No weekly tasks yet.</p>}
+              {activeTasks.length === 0 && <p className="empty-text">No weekly tasks yet.</p>}
 
               {groupedActiveTasks.map(([categoryName, tasksInCategory]) => (
                 <div key={categoryName} className="task-category-block">
@@ -1814,98 +1879,7 @@ function App() {
                             <button className="task-action-mini danger-mini" onClick={() => deleteTask(task.id)}>Delete</button>
                           </div>
                         </div>
-                        {editingTaskId === task.id && (
-                          <div className="task-form-inline">
-                            <h3 style={{margin: "0 0 14px"}}>Edit Task</h3>
-                            <div className="labeled-form-grid">
-                              <div className="field-group">
-                                <label className="field-label">Task Name</label>
-                                <input className="input" placeholder="Workout" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                              </div>
-                              <div className="field-group">
-                                <label className="field-label">Tracker Type</label>
-                                <select className="input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
-                                  <option value="weekly">Weekly Task</option>
-                                  <option value="longterm">Long-Term Tracker</option>
-                                </select>
-                              </div>
-                              <div className="field-group">
-                                <label className="field-label">Category</label>
-                                <select className="input" value={form.category} onChange={(e) => {
-                                  if (e.target.value === "__custom__") { setShowCustomCategoryInput(true); }
-                                  else { setForm({ ...form, category: e.target.value }); setShowCustomCategoryInput(false); }
-                                }}>
-                                  <option value="">Select category</option>
-                                  {[...DEFAULT_CATEGORIES, ...customCategories].map((cat) => (<option key={cat} value={cat}>{cat}</option>))}
-                                  <option value="__custom__">+ Add Custom</option>
-                                </select>
-                                {showCustomCategoryInput && (
-                                  <div style={{ marginTop: "8px" }}>
-                                    <input className="input" placeholder="Enter new category" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} />
-                                    <button className="small-button" style={{ marginTop: "6px" }} onClick={() => {
-                                      if (!newCategory.trim()) return;
-                                      setCustomCategories([...customCategories, newCategory.trim()]);
-                                      setForm({ ...form, category: newCategory.trim() });
-                                      setNewCategory(""); setShowCustomCategoryInput(false);
-                                    }}>Save Category</button>
-                                  </div>
-                                )}
-                              </div>
-                              {form.type === "longterm" ? (
-                                <>
-                                  <div className="field-group">
-                                    <label className="field-label">Target Amount (required)</label>
-                                    <input className="input" type="number" min="1" placeholder="1000" value={form.targetCount} onChange={(e) => setForm({ ...form, targetCount: e.target.value })} />
-                                  </div>
-                                  <div className="field-group">
-                                    <label className="field-label">Current Progress</label>
-                                    <input className="input" type="number" min="0" placeholder="0" value={form.currentCount} onChange={(e) => setForm({ ...form, currentCount: e.target.value })} />
-                                  </div>
-                                  <div className="field-group">
-                                    <label className="field-label">Unit Label</label>
-                                    <input className="input" placeholder="reviews" value={form.unitLabel} onChange={(e) => setForm({ ...form, unitLabel: e.target.value })} />
-                                  </div>
-                                  <div className="field-group">
-                                    <label className="field-label">Reward Trophy (required)</label>
-                                    <input className="input" placeholder="Buy the fancy notebook" value={form.reward} onChange={(e) => setForm({ ...form, reward: e.target.value })} />
-                                  </div>
-                                </>
-                              ) : (
-                                <>
-                                  <div className="field-group">
-                                    <label className="field-label">Daily Goal</label>
-                                    <input className="input" placeholder="30 minutes" value={form.dailyGoal} onChange={(e) => setForm({ ...form, dailyGoal: e.target.value })} />
-                                  </div>
-                                  <div className="field-group">
-                                    <label className="field-label">Daily Points</label>
-                                    <input className="input" type="number" placeholder="10" value={form.dailyPoints} onChange={(e) => setForm({ ...form, dailyPoints: e.target.value })} />
-                                  </div>
-                                  <div className="field-group">
-                                    <label className="field-label">Extra Threshold</label>
-                                    <input className="input" placeholder="60 minutes" value={form.extraThreshold} onChange={(e) => setForm({ ...form, extraThreshold: e.target.value })} />
-                                  </div>
-                                  <div className="field-group">
-                                    <label className="field-label">Extra Points</label>
-                                    <input className="input" type="number" placeholder="5" value={form.extraBonus} onChange={(e) => setForm({ ...form, extraBonus: e.target.value })} />
-                                  </div>
-                                  <div className="field-group">
-                                    <label className="field-label">Weekly Goal (times/week)</label>
-                                    <input className="input" type="number" placeholder="3" value={form.weeklyGoal} onChange={(e) => setForm({ ...form, weeklyGoal: e.target.value })} />
-                                  </div>
-                                  <div className="field-group">
-                                    <label className="field-label">Weekly Bonus Points</label>
-                                    <input className="input" type="number" placeholder="20" value={form.weeklyBonus} onChange={(e) => setForm({ ...form, weeklyBonus: e.target.value })} />
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                            {formError && <div className="form-error" role="alert">{formError}</div>}
-                            <div className="task-controls">
-                              <button className="small-button" onClick={saveTask}>Save Changes</button>
-                              <button className="small-button archive-button" onClick={cancelEdit}>Cancel</button>
-                            </div>
-                          </div>
-                        )}
+                        {editingTaskId === task.id && renderTaskForm({ title: task.name, submitLabel: "Save changes" })}
                         </div>
                       );
                     })}
@@ -1914,17 +1888,16 @@ function App() {
               ))}
             </div>
 
-            <div className="card">
+            <div className="card task-section-card">
               <div className="section-header section-header-stack">
                 <div>
-                  <h2>Long-Term Trackers</h2>
-                  <div className="section-subtitle">
-                    Cumulative goals with reward trophies. Progress here does not affect weekly points.
-                  </div>
+                  <span className="section-kicker">Long-range goals</span>
+                  <h2>Cumulative Tasks</h2>
                 </div>
+                <span className="section-count">{activeLongTermTasks.length}</span>
               </div>
 
-              {activeLongTermTasks.length === 0 && <p className="empty-text">No long-term trackers yet.</p>}
+              {activeLongTermTasks.length === 0 && <p className="empty-text">No cumulative tasks yet.</p>}
 
               <div className="longterm-grid">
                 {activeLongTermTasks.map((task) => {
@@ -1976,12 +1949,23 @@ function App() {
                             className="input"
                             type="number"
                             min="1"
-                            placeholder="Add"
+                            aria-label={`Add progress to ${task.name}`}
+                            placeholder={`Add ${task.unitLabel || "progress"}`}
                             value={incrementValue}
                             onChange={(e) => setLongTermIncrements((prev) => ({ ...prev, [task.id]: e.target.value }))}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") updateLongTermProgress(task.id, incrementValue);
+                            }}
                           />
-                          <button className="small-button" onClick={() => updateLongTermProgress(task.id, incrementValue)}>Add</button>
-                          <button className="small-button" onClick={() => updateLongTermProgress(task.id, 1)}>+1</button>
+                          <button
+                            className="small-button"
+                            type="button"
+                            disabled={!Number(incrementValue) || Number(incrementValue) <= 0}
+                            onClick={() => updateLongTermProgress(task.id, incrementValue)}
+                          >
+                            Add
+                          </button>
+                          <button className="small-button secondary-button" type="button" onClick={() => updateLongTermProgress(task.id, 1)}>+1</button>
                         </div>
 
                         <div className="task-action-row">
@@ -1991,42 +1975,7 @@ function App() {
                         </div>
                       </div>
 
-                      {editingTaskId === task.id && (
-                        <div className="task-form-inline">
-                          <h3 style={{margin: "0 0 14px"}}>Edit Tracker</h3>
-                          <div className="labeled-form-grid">
-                            <div className="field-group">
-                              <label className="field-label">Task Name</label>
-                              <input className="input" placeholder="Anki Reviews" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
-                            </div>
-                            <div className="field-group">
-                              <label className="field-label">Category</label>
-                              <input className="input" placeholder="Education" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
-                            </div>
-                            <div className="field-group">
-                              <label className="field-label">Target Amount (required)</label>
-                              <input className="input" type="number" min="1" placeholder="1000" value={form.targetCount} onChange={(e) => setForm({ ...form, targetCount: e.target.value })} />
-                            </div>
-                            <div className="field-group">
-                              <label className="field-label">Current Progress</label>
-                              <input className="input" type="number" min="0" placeholder="0" value={form.currentCount} onChange={(e) => setForm({ ...form, currentCount: e.target.value })} />
-                            </div>
-                            <div className="field-group">
-                              <label className="field-label">Unit Label</label>
-                              <input className="input" placeholder="reviews" value={form.unitLabel} onChange={(e) => setForm({ ...form, unitLabel: e.target.value })} />
-                            </div>
-                            <div className="field-group">
-                              <label className="field-label">Reward Trophy (required)</label>
-                              <input className="input" placeholder="Buy the fancy notebook" value={form.reward} onChange={(e) => setForm({ ...form, reward: e.target.value })} />
-                            </div>
-                          </div>
-                          {formError && <div className="form-error" role="alert">{formError}</div>}
-                          <div className="task-controls">
-                            <button className="small-button" onClick={saveTask}>Save Changes</button>
-                            <button className="small-button archive-button" onClick={cancelEdit}>Cancel</button>
-                          </div>
-                        </div>
-                      )}
+                      {editingTaskId === task.id && renderTaskForm({ title: task.name, submitLabel: "Save changes" })}
                     </div>
                   );
                 })}
@@ -2500,29 +2449,30 @@ function App() {
               </div>
             </div>
 
-            <div className="week-counter-wrap">
-              {weekInfoVisible && (
-                <div className="info-popover" role="status">
-                  {weekTierInfo[weekInfoVisible]}
+            <div className="stats-grid stats-grid-three week-tier-grid">
+              {[
+                { id: "great", label: "Great Weeks", value: totalGreatWeeks },
+                { id: "excellent", label: "Excellent Weeks", value: totalExcellentWeeks },
+                { id: "perfect", label: "Perfect Weeks", value: totalPerfectWeeks },
+              ].map((tier) => (
+                <div className="week-tier-item" key={tier.id}>
+                  <button
+                    className="week-tier-card"
+                    type="button"
+                    onClick={() => showWeekInfo(tier.id)}
+                    aria-expanded={weekInfoVisible === tier.id}
+                  >
+                    <span className="stat-label">{tier.label}</span>
+                    <strong className="stat-value">{tier.value}</strong>
+                    <span className="stat-subvalue">Criteria</span>
+                  </button>
+                  {weekInfoVisible === tier.id && (
+                    <div className="info-popover" role="note">
+                      {weekTierInfo[tier.id]}
+                    </div>
+                  )}
                 </div>
-              )}
-              <div className="stats-grid stats-grid-three">
-                <button className="card stat-card stat-card-button" type="button" onClick={() => showWeekInfo("great")}>
-                  <div className="stat-label">Great Weeks</div>
-                  <div className="stat-value">{totalGreatWeeks}</div>
-                  <div className="stat-subvalue">tap for criteria</div>
-                </button>
-                <button className="card stat-card stat-card-button" type="button" onClick={() => showWeekInfo("excellent")}>
-                  <div className="stat-label">Excellent Weeks</div>
-                  <div className="stat-value">{totalExcellentWeeks}</div>
-                  <div className="stat-subvalue">tap for criteria</div>
-                </button>
-                <button className="card stat-card stat-card-button" type="button" onClick={() => showWeekInfo("perfect")}>
-                  <div className="stat-label">Perfect Weeks</div>
-                  <div className="stat-value">{totalPerfectWeeks}</div>
-                  <div className="stat-subvalue">tap for criteria</div>
-                </button>
-              </div>
+              ))}
             </div>
 
             {/* Streak freezes */}
