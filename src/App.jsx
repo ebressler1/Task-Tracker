@@ -1821,58 +1821,63 @@ function App() {
                           </div>
                         </div>
 
-                        <div className="longterm-progress-line">
-                          <strong>{currentCount.toLocaleString()}</strong>
-                          <span>/ {targetCount.toLocaleString()} {task.unitLabel || "total"}</span>
-                        </div>
-                        <div
-                          className="longterm-progress-bar-wrap"
-                          role="progressbar"
-                          aria-label={`${task.name} progress`}
-                          aria-valuemin={0}
-                          aria-valuemax={targetCount}
-                          aria-valuenow={Math.min(currentCount, targetCount)}
-                          aria-valuetext={`${currentCount.toLocaleString()} of ${targetCount.toLocaleString()} ${task.unitLabel || "total"}`}
-                        >
-                          <div className="longterm-progress-bar" style={{ width: `${progressPercent}%` }} />
-                        </div>
-                        <div className="longterm-progress-status">
-                          <span>{progressPercent}% complete</span>
-                          {isComplete && <strong>Reward unlocked</strong>}
-                        </div>
-                        <div className="longterm-reward">
-                          <span>Reward</span>
-                          <strong>{task.reward || "No reward set"}</strong>
-                        </div>
-
-                        <div className="longterm-add-row">
-                          <input
-                            className="input"
-                            type="number"
-                            min="1"
-                            aria-label={`Add progress to ${task.name}`}
-                            placeholder={`Add ${task.unitLabel || "progress"}`}
-                            value={incrementValue}
-                            onChange={(e) => setLongTermIncrements((prev) => ({ ...prev, [task.id]: e.target.value }))}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter") updateLongTermProgress(task.id, incrementValue);
-                            }}
-                          />
-                          <button
-                            className="small-button"
-                            type="button"
-                            disabled={!Number(incrementValue) || Number(incrementValue) <= 0}
-                            onClick={() => updateLongTermProgress(task.id, incrementValue)}
+                        <div className="longterm-progress-group">
+                          <div className="longterm-progress-line">
+                            <strong>{currentCount.toLocaleString()}</strong>
+                            <span>/ {targetCount.toLocaleString()} {task.unitLabel || "total"}</span>
+                          </div>
+                          <div
+                            className="longterm-progress-bar-wrap"
+                            role="progressbar"
+                            aria-label={`${task.name} progress`}
+                            aria-valuemin={0}
+                            aria-valuemax={targetCount}
+                            aria-valuenow={Math.min(currentCount, targetCount)}
+                            aria-valuetext={`${currentCount.toLocaleString()} of ${targetCount.toLocaleString()} ${task.unitLabel || "total"}`}
                           >
-                            Add
-                          </button>
-                          <button className="small-button secondary-button" type="button" onClick={() => updateLongTermProgress(task.id, 1)}>+1</button>
+                            <div className="longterm-progress-bar" style={{ width: `${progressPercent}%` }} />
+                          </div>
+                          <div className="longterm-progress-status">
+                            <span>{progressPercent}% complete</span>
+                            {isComplete && <strong>Reward unlocked</strong>}
+                          </div>
                         </div>
 
-                        <div className="task-action-row">
-                          <button className="task-action-mini" onClick={() => startEditTask(task)}>Edit</button>
-                          <button className="task-action-mini" onClick={() => toggleArchived(task.id)}>Archive</button>
-                          <button className="task-action-mini danger-mini" onClick={() => deleteTask(task.id)}>Delete</button>
+                        <div className="longterm-control-group">
+                          <div className="longterm-reward">
+                            <span>Reward</span>
+                            <strong>{task.reward || "No reward set"}</strong>
+                          </div>
+
+                          <div className="longterm-add-row">
+                            <input
+                              className="input"
+                              type="number"
+                              min="1"
+                              aria-label={`Add progress to ${task.name}`}
+                              placeholder={`Add ${task.unitLabel || "progress"}`}
+                              value={incrementValue}
+                              onChange={(e) => setLongTermIncrements((prev) => ({ ...prev, [task.id]: e.target.value }))}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") updateLongTermProgress(task.id, incrementValue);
+                              }}
+                            />
+                            <button
+                              className="small-button"
+                              type="button"
+                              disabled={!Number(incrementValue) || Number(incrementValue) <= 0}
+                              onClick={() => updateLongTermProgress(task.id, incrementValue)}
+                            >
+                              Add
+                            </button>
+                            <button className="small-button secondary-button" type="button" onClick={() => updateLongTermProgress(task.id, 1)}>+1</button>
+                          </div>
+
+                          <div className="task-action-row">
+                            <button className="task-action-mini" onClick={() => startEditTask(task)}>Edit</button>
+                            <button className="task-action-mini" onClick={() => toggleArchived(task.id)}>Archive</button>
+                            <button className="task-action-mini danger-mini" onClick={() => deleteTask(task.id)}>Delete</button>
+                          </div>
                         </div>
                       </div>
 
