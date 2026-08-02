@@ -834,15 +834,15 @@ body.theme-dark .category-streak-card {
 /* New compact grouped task UI */
 
 .task-category-block + .task-category-block {
-  margin-top: 16px;
+  margin-top: 10px;
 }
 
 .task-category-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 8px;
-  padding-bottom: 6px;
+  margin-bottom: 5px;
+  padding-bottom: 4px;
   border-bottom: 1px solid var(--border);
 }
 
@@ -850,13 +850,13 @@ body.theme-dark .category-streak-card {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 28px;
-  height: 28px;
-  padding: 0 10px;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 7px;
   border-radius: 999px;
   background: var(--pill-bg);
   color: var(--text);
-  font-size: 13px;
+  font-size: 11px;
   font-weight: 800;
   border: 1px solid var(--border);
 }
@@ -864,7 +864,7 @@ body.theme-dark .category-streak-card {
 .task-category-grid {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 8px;
+  gap: 5px;
 }
 
 .task-compact-card {
@@ -872,7 +872,7 @@ body.theme-dark .category-streak-card {
   flex-direction: row;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
+  padding: 4px 8px;
   border: 1px solid var(--border);
   border-radius: 8px;
   background: var(--bg-elevated);
@@ -890,9 +890,9 @@ body.theme-dark .task-compact-card {
 
 .task-complete-button,
 .task-bonus-button {
-  width: 30px;
-  height: 30px;
-  min-width: 30px;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
   border-radius: 7px;
   border: 1px solid var(--border);
   cursor: pointer;
@@ -977,7 +977,7 @@ body.theme-dark .task-compact-card {
 }
 
 .status-badge {
-  padding: 3px 8px;
+  padding: 2px 6px;
   border-radius: 999px;
   font-size: 11px;
   font-weight: 700;
@@ -1378,11 +1378,11 @@ body.theme-dark .timeline-item {
 
 .task-section-card .section-header-stack {
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
 }
 
 .task-section-card {
-  padding: 16px;
+  padding: 12px;
 }
 
 .task-form-inline {
@@ -1506,15 +1506,19 @@ body.theme-dark .task-form-inline {
 /* Long-term trackers */
 .longterm-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 6px;
 }
 
 .longterm-card {
+  display: grid;
+  grid-template-columns: minmax(150px, 0.75fr) minmax(220px, 1.25fr) minmax(320px, 1.5fr);
+  align-items: center;
+  gap: 12px;
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: 8px;
-  padding: 12px;
+  padding: 8px 10px;
   box-shadow: none;
 }
 
@@ -1528,12 +1532,16 @@ body.theme-dark .task-form-inline {
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
-  margin-bottom: 8px;
+  margin: 0;
+  min-width: 0;
 }
 
 .longterm-card-header h3 {
-  margin: 0 0 2px;
-  font-size: 0.95rem;
+  margin: 0 0 1px;
+  overflow: hidden;
+  font-size: 0.9rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   color: var(--text);
 }
 
@@ -1543,8 +1551,8 @@ body.theme-dark .task-form-inline {
 }
 
 .longterm-trophy {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 6px;
   display: inline-flex;
   align-items: center;
@@ -1552,18 +1560,22 @@ body.theme-dark .task-form-inline {
   flex-shrink: 0;
   border: 1px solid rgba(118, 159, 182, 0.35);
   background: rgba(118, 159, 182, 0.1);
-  font-size: 1.05rem;
+  font-size: 0.95rem;
+}
+
+.longterm-progress-group {
+  min-width: 0;
 }
 
 .longterm-progress-line {
   display: flex;
   align-items: baseline;
   gap: 5px;
-  margin-bottom: 5px;
+  margin-bottom: 3px;
 }
 
 .longterm-progress-line strong {
-  font-size: 1.15rem;
+  font-size: 1rem;
   color: var(--text);
 }
 
@@ -1574,7 +1586,7 @@ body.theme-dark .task-form-inline {
 }
 
 .longterm-progress-bar-wrap {
-  height: 8px;
+  height: 6px;
   overflow: hidden;
   border-radius: 999px;
   background: rgba(118, 159, 182, 0.16);
@@ -1591,9 +1603,9 @@ body.theme-dark .task-form-inline {
   display: flex;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 4px;
+  margin-top: 2px;
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: 10px;
 }
 
 .longterm-progress-status strong {
@@ -1603,31 +1615,53 @@ body.theme-dark .task-form-inline {
 .longterm-reward {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-top: 7px;
+  justify-content: flex-start;
+  gap: 6px;
+  min-width: 0;
+  margin: 0;
 }
 
 .longterm-reward strong {
-  font-size: 12px;
+  overflow: hidden;
+  font-size: 11px;
   color: var(--text);
-  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.longterm-control-group {
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) auto;
+  grid-template-areas:
+    "reward reward"
+    "add actions";
+  align-items: center;
+  gap: 4px 8px;
+  min-width: 0;
+}
+
+.longterm-control-group .longterm-reward {
+  grid-area: reward;
 }
 
 .longterm-add-row {
+  grid-area: add;
   display: grid;
   grid-template-columns: minmax(70px, 1fr) auto auto;
-  gap: 6px;
-  margin-top: 10px;
+  gap: 4px;
+  min-width: 0;
+  margin: 0;
 }
 
 .longterm-add-row .input {
   margin-top: 0;
-  padding: 8px 9px;
+  padding: 6px 8px;
+  font-size: 12px;
 }
 
-.longterm-card > .task-action-row {
-  margin-top: 6px;
+.longterm-control-group > .task-action-row {
+  grid-area: actions;
+  margin: 0;
   justify-content: flex-end;
 }
 
@@ -1711,6 +1745,15 @@ body.theme-dark .task-form-inline {
   .task-goal-info {
     display: none;
   }
+
+  .longterm-card {
+    grid-template-columns: minmax(140px, 0.75fr) minmax(220px, 1.25fr);
+    gap: 8px 12px;
+  }
+
+  .longterm-control-group {
+    grid-column: 1 / -1;
+  }
 }
 
 @media (max-width: 768px) {
@@ -1785,11 +1828,15 @@ body.theme-dark .task-form-inline {
   }
 
   .task-compact-card {
-    padding: 6px 8px;
+    padding: 4px 7px;
+  }
+
+  .task-section-card {
+    padding: 10px;
   }
 
   .longterm-card {
-    padding: 10px;
+    padding: 8px;
   }
 
   .longterm-progress-status,
@@ -1805,6 +1852,26 @@ body.theme-dark .task-form-inline {
     align-self: flex-start;
   }
 
+}
+
+@media (max-width: 600px) {
+  .longterm-card {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+
+  .longterm-control-group {
+    grid-column: auto;
+    grid-template-columns: 1fr;
+    grid-template-areas:
+      "reward"
+      "add"
+      "actions";
+  }
+
+  .longterm-control-group > .task-action-row {
+    justify-content: flex-start;
+  }
 }
 
 /* ── Completion animation ─────────────────────────────────────── */
