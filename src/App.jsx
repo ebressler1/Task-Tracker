@@ -341,6 +341,7 @@ function App() {
   const [completingPoints, setCompletingPoints] = useState(0);
   const [weekInfoVisible, setWeekInfoVisible] = useState(null);
   const [selectedTaskId, setSelectedTaskId] = useState(null);
+  const [longTermIncrements, setLongTermIncrements] = useState({});
 
 
   const emptyForm = {
@@ -352,6 +353,11 @@ function App() {
     extraBonus: "",
     weeklyGoal: "",
     weeklyBonus: "",
+    type: "weekly",
+    targetCount: "",
+    currentCount: "",
+    unitLabel: "",
+    reward: "",
   };
 
   const [form, setForm] = useState(emptyForm);
@@ -385,6 +391,11 @@ function App() {
             extraBonus: task.extraBonus ?? 0,
             weeklyGoal: task.weeklyGoal ?? 0,
             weeklyBonus: task.weeklyBonus ?? 0,
+            type: task.type ?? "weekly",
+            targetCount: task.targetCount ?? 0,
+            currentCount: task.currentCount ?? 0,
+            unitLabel: task.unitLabel ?? "",
+            reward: task.reward ?? "",
             active: task.active ?? true,
           })));
         } else {
@@ -449,7 +460,8 @@ function App() {
     setDoc(doc(db, "users", user.uid), { personalRecords }, { merge: true });
   }, [personalRecords]);
 
-  const activeTasks = tasks.filter((task) => task.active);
+  const activeTasks = tasks.filter((task) => task.active && (task.type ?? "weekly") === "weekly");
+  const activeLongTermTasks = tasks.filter((task) => task.active && task.type === "longterm");
   const archivedTasks = tasks.filter((task) => !task.active);
 
   const getTaskLog = (taskId, date) => {
@@ -1152,15 +1164,28 @@ function App() {
     };
   }, [selectedDate, activeTasks, tasks, logs]);
 
+  const longTermBadges = useMemo(() => {
+    return tasks
+      .filter((task) => task.type === "longterm")
+      .map((task) => ({
+        id: `longterm_${task.id}`,
+        icon: "🏆",
+        name: task.reward || `${task.name} Complete`,
+        desc: `${task.name}: ${(Number(task.targetCount) || 0).toLocaleString()} ${task.unitLabel || "total"}`,
+      }));
+  }, [tasks]);
+
+  const allBadges = useMemo(() => [...BADGES, ...longTermBadges], [longTermBadges]);
+
   const milestoneTimeline = useMemo(() => {
     return Object.entries(earnedBadges)
       .map(([badgeId, date]) => {
-        const badge = BADGES.find((item) => item.id === badgeId);
+        const badge = allBadges.find((item) => item.id === badgeId);
         return badge ? { ...badge, date } : null;
       })
       .filter(Boolean)
       .sort((a, b) => b.date.localeCompare(a.date));
-  }, [earnedBadges]);
+  }, [earnedBadges, allBadges]);
 
   const showWeekInfo = (type) => {
     setWeekInfoVisible(type);
@@ -1244,8 +1269,13 @@ function App() {
     if (currentLevelData.level >= 10) earn("level_10");
     if (currentLevelData.level >= 15) earn("level_15");
     if (currentLevelData.level >= 20) earn("level_20");
+    activeLongTermTasks.forEach((task) => {
+      if ((Number(task.targetCount) || 0) > 0 && (Number(task.currentCount) || 0) >= Number(task.targetCount)) {
+        earn(`longterm_${task.id}`);
+      }
+    });
     if (Object.keys(newBadges).length > 0) setEarnedBadges((prev) => ({ ...prev, ...newBadges }));
-  }, [logs, lifetimePoints, totalGreatWeeks, totalExcellentWeeks, totalPerfectWeeks, maxTaskStreak, activityStreak, dailyPerfectStreak, totalAllTasksDays, totalBonusEarned, currentLevelData]);
+  }, [logs, tasks, lifetimePoints, totalGreatWeeks, totalExcellentWeeks, totalPerfectWeeks, maxTaskStreak, activityStreak, dailyPerfectStreak, totalAllTasksDays, totalBonusEarned, currentLevelData]);
 
   // Update personal records
   useEffect(() => {
@@ -1294,21 +1324,32 @@ function App() {
       extraBonus: String(task.extraBonus),
       weeklyGoal: String(task.weeklyGoal),
       weeklyBonus: String(task.weeklyBonus),
+      type: task.type ?? "weekly",
+      targetCount: String(task.targetCount ?? ""),
+      currentCount: String(task.currentCount ?? ""),
+      unitLabel: task.unitLabel ?? "",
+      reward: task.reward ?? "",
     });
   };
 
   const saveTask = () => {
     if (!form.name.trim()) return;
 
+    const taskType = form.type === "longterm" ? "longterm" : "weekly";
     const taskPayload = {
       name: form.name.trim(),
       category: form.category.trim(),
-      dailyGoal: form.dailyGoal.trim(),
-      dailyPoints: Number(form.dailyPoints) || 0,
-      extraThreshold: form.extraThreshold.trim(),
-      extraBonus: Number(form.extraBonus) || 0,
-      weeklyGoal: Number(form.weeklyGoal) || 0,
-      weeklyBonus: Number(form.weeklyBonus) || 0,
+      type: taskType,
+      dailyGoal: taskType === "weekly" ? form.dailyGoal.trim() : "",
+      dailyPoints: taskType === "weekly" ? Number(form.dailyPoints) || 0 : 0,
+      extraThreshold: taskType === "weekly" ? form.extraThreshold.trim() : "",
+      extraBonus: taskType === "weekly" ? Number(form.extraBonus) || 0 : 0,
+      weeklyGoal: taskType === "weekly" ? Number(form.weeklyGoal) || 0 : 0,
+      weeklyBonus: taskType === "weekly" ? Number(form.weeklyBonus) || 0 : 0,
+      targetCount: taskType === "longterm" ? Number(form.targetCount) || 0 : 0,
+      currentCount: taskType === "longterm" ? Number(form.currentCount) || 0 : 0,
+      unitLabel: taskType === "longterm" ? form.unitLabel.trim() : "",
+      reward: taskType === "longterm" ? form.reward.trim() : "",
     };
 
     if (editingTaskId) {
@@ -1361,6 +1402,20 @@ function App() {
         task.id === taskId ? { ...task, active: !task.active } : task
       )
     );
+  };
+
+  const updateLongTermProgress = (taskId, amount) => {
+    const delta = Number(amount) || 0;
+    if (delta === 0) return;
+
+    setTasks((prev) =>
+      prev.map((task) => {
+        if (task.id !== taskId) return task;
+        const currentCount = Math.max(0, (Number(task.currentCount) || 0) + delta);
+        return { ...task, currentCount };
+      })
+    );
+    setLongTermIncrements((prev) => ({ ...prev, [taskId]: "" }));
   };
 
   const toggleComplete = (taskId) => {
@@ -1549,7 +1604,7 @@ function App() {
             <div className="card">
               <div className="section-header section-header-stack">
                 <div>
-                  <h2>Active Tasks</h2>
+                  <h2>Weekly Tasks</h2>
                   <div className="section-subtitle">
                     Grouped by category. Tap the check to complete the task for the selected day.
                   </div>
@@ -1569,6 +1624,13 @@ function App() {
                     <div className="field-group">
                       <label className="field-label">Task Name</label>
                       <input className="input" placeholder="Workout" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                    </div>
+                    <div className="field-group">
+                      <label className="field-label">Tracker Type</label>
+                      <select className="input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                        <option value="weekly">Weekly Task</option>
+                        <option value="longterm">Long-Term Tracker</option>
+                      </select>
                     </div>
                     <div className="field-group">
                       <label className="field-label">Category</label>
@@ -1592,30 +1654,53 @@ function App() {
                         </div>
                       )}
                     </div>
-                    <div className="field-group">
-                      <label className="field-label">Daily Goal</label>
-                      <input className="input" placeholder="30 minutes" value={form.dailyGoal} onChange={(e) => setForm({ ...form, dailyGoal: e.target.value })} />
-                    </div>
-                    <div className="field-group">
-                      <label className="field-label">Daily Points</label>
-                      <input className="input" type="number" placeholder="10" value={form.dailyPoints} onChange={(e) => setForm({ ...form, dailyPoints: e.target.value })} />
-                    </div>
-                    <div className="field-group">
-                      <label className="field-label">Extra Threshold</label>
-                      <input className="input" placeholder="60 minutes" value={form.extraThreshold} onChange={(e) => setForm({ ...form, extraThreshold: e.target.value })} />
-                    </div>
-                    <div className="field-group">
-                      <label className="field-label">Extra Points</label>
-                      <input className="input" type="number" placeholder="5" value={form.extraBonus} onChange={(e) => setForm({ ...form, extraBonus: e.target.value })} />
-                    </div>
-                    <div className="field-group">
-                      <label className="field-label">Weekly Goal (times/week)</label>
-                      <input className="input" type="number" placeholder="3" value={form.weeklyGoal} onChange={(e) => setForm({ ...form, weeklyGoal: e.target.value })} />
-                    </div>
-                    <div className="field-group">
-                      <label className="field-label">Weekly Bonus Points</label>
-                      <input className="input" type="number" placeholder="20" value={form.weeklyBonus} onChange={(e) => setForm({ ...form, weeklyBonus: e.target.value })} />
-                    </div>
+                    {form.type === "longterm" ? (
+                      <>
+                        <div className="field-group">
+                          <label className="field-label">Target Amount</label>
+                          <input className="input" type="number" placeholder="1000" value={form.targetCount} onChange={(e) => setForm({ ...form, targetCount: e.target.value })} />
+                        </div>
+                        <div className="field-group">
+                          <label className="field-label">Current Progress</label>
+                          <input className="input" type="number" placeholder="0" value={form.currentCount} onChange={(e) => setForm({ ...form, currentCount: e.target.value })} />
+                        </div>
+                        <div className="field-group">
+                          <label className="field-label">Unit Label</label>
+                          <input className="input" placeholder="reviews" value={form.unitLabel} onChange={(e) => setForm({ ...form, unitLabel: e.target.value })} />
+                        </div>
+                        <div className="field-group">
+                          <label className="field-label">Reward Trophy</label>
+                          <input className="input" placeholder="Buy the fancy notebook" value={form.reward} onChange={(e) => setForm({ ...form, reward: e.target.value })} />
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="field-group">
+                          <label className="field-label">Daily Goal</label>
+                          <input className="input" placeholder="30 minutes" value={form.dailyGoal} onChange={(e) => setForm({ ...form, dailyGoal: e.target.value })} />
+                        </div>
+                        <div className="field-group">
+                          <label className="field-label">Daily Points</label>
+                          <input className="input" type="number" placeholder="10" value={form.dailyPoints} onChange={(e) => setForm({ ...form, dailyPoints: e.target.value })} />
+                        </div>
+                        <div className="field-group">
+                          <label className="field-label">Extra Threshold</label>
+                          <input className="input" placeholder="60 minutes" value={form.extraThreshold} onChange={(e) => setForm({ ...form, extraThreshold: e.target.value })} />
+                        </div>
+                        <div className="field-group">
+                          <label className="field-label">Extra Points</label>
+                          <input className="input" type="number" placeholder="5" value={form.extraBonus} onChange={(e) => setForm({ ...form, extraBonus: e.target.value })} />
+                        </div>
+                        <div className="field-group">
+                          <label className="field-label">Weekly Goal (times/week)</label>
+                          <input className="input" type="number" placeholder="3" value={form.weeklyGoal} onChange={(e) => setForm({ ...form, weeklyGoal: e.target.value })} />
+                        </div>
+                        <div className="field-group">
+                          <label className="field-label">Weekly Bonus Points</label>
+                          <input className="input" type="number" placeholder="20" value={form.weeklyBonus} onChange={(e) => setForm({ ...form, weeklyBonus: e.target.value })} />
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="task-controls">
                     <button className="small-button" onClick={saveTask}>Add Task</button>
@@ -1624,7 +1709,7 @@ function App() {
                 </div>
               )}
 
-              {activeTasks.length === 0 && !showForm && <p className="empty-text">No active tasks yet.</p>}
+              {activeTasks.length === 0 && !showForm && <p className="empty-text">No weekly tasks yet.</p>}
 
               {groupedActiveTasks.map(([categoryName, tasksInCategory]) => (
                 <div key={categoryName} className="task-category-block">
@@ -1714,6 +1799,13 @@ function App() {
                                 <input className="input" placeholder="Workout" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
                               </div>
                               <div className="field-group">
+                                <label className="field-label">Tracker Type</label>
+                                <select className="input" value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })}>
+                                  <option value="weekly">Weekly Task</option>
+                                  <option value="longterm">Long-Term Tracker</option>
+                                </select>
+                              </div>
+                              <div className="field-group">
                                 <label className="field-label">Category</label>
                                 <select className="input" value={form.category} onChange={(e) => {
                                   if (e.target.value === "__custom__") { setShowCustomCategoryInput(true); }
@@ -1735,30 +1827,53 @@ function App() {
                                   </div>
                                 )}
                               </div>
-                              <div className="field-group">
-                                <label className="field-label">Daily Goal</label>
-                                <input className="input" placeholder="30 minutes" value={form.dailyGoal} onChange={(e) => setForm({ ...form, dailyGoal: e.target.value })} />
-                              </div>
-                              <div className="field-group">
-                                <label className="field-label">Daily Points</label>
-                                <input className="input" type="number" placeholder="10" value={form.dailyPoints} onChange={(e) => setForm({ ...form, dailyPoints: e.target.value })} />
-                              </div>
-                              <div className="field-group">
-                                <label className="field-label">Extra Threshold</label>
-                                <input className="input" placeholder="60 minutes" value={form.extraThreshold} onChange={(e) => setForm({ ...form, extraThreshold: e.target.value })} />
-                              </div>
-                              <div className="field-group">
-                                <label className="field-label">Extra Points</label>
-                                <input className="input" type="number" placeholder="5" value={form.extraBonus} onChange={(e) => setForm({ ...form, extraBonus: e.target.value })} />
-                              </div>
-                              <div className="field-group">
-                                <label className="field-label">Weekly Goal (times/week)</label>
-                                <input className="input" type="number" placeholder="3" value={form.weeklyGoal} onChange={(e) => setForm({ ...form, weeklyGoal: e.target.value })} />
-                              </div>
-                              <div className="field-group">
-                                <label className="field-label">Weekly Bonus Points</label>
-                                <input className="input" type="number" placeholder="20" value={form.weeklyBonus} onChange={(e) => setForm({ ...form, weeklyBonus: e.target.value })} />
-                              </div>
+                              {form.type === "longterm" ? (
+                                <>
+                                  <div className="field-group">
+                                    <label className="field-label">Target Amount</label>
+                                    <input className="input" type="number" placeholder="1000" value={form.targetCount} onChange={(e) => setForm({ ...form, targetCount: e.target.value })} />
+                                  </div>
+                                  <div className="field-group">
+                                    <label className="field-label">Current Progress</label>
+                                    <input className="input" type="number" placeholder="0" value={form.currentCount} onChange={(e) => setForm({ ...form, currentCount: e.target.value })} />
+                                  </div>
+                                  <div className="field-group">
+                                    <label className="field-label">Unit Label</label>
+                                    <input className="input" placeholder="reviews" value={form.unitLabel} onChange={(e) => setForm({ ...form, unitLabel: e.target.value })} />
+                                  </div>
+                                  <div className="field-group">
+                                    <label className="field-label">Reward Trophy</label>
+                                    <input className="input" placeholder="Buy the fancy notebook" value={form.reward} onChange={(e) => setForm({ ...form, reward: e.target.value })} />
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <div className="field-group">
+                                    <label className="field-label">Daily Goal</label>
+                                    <input className="input" placeholder="30 minutes" value={form.dailyGoal} onChange={(e) => setForm({ ...form, dailyGoal: e.target.value })} />
+                                  </div>
+                                  <div className="field-group">
+                                    <label className="field-label">Daily Points</label>
+                                    <input className="input" type="number" placeholder="10" value={form.dailyPoints} onChange={(e) => setForm({ ...form, dailyPoints: e.target.value })} />
+                                  </div>
+                                  <div className="field-group">
+                                    <label className="field-label">Extra Threshold</label>
+                                    <input className="input" placeholder="60 minutes" value={form.extraThreshold} onChange={(e) => setForm({ ...form, extraThreshold: e.target.value })} />
+                                  </div>
+                                  <div className="field-group">
+                                    <label className="field-label">Extra Points</label>
+                                    <input className="input" type="number" placeholder="5" value={form.extraBonus} onChange={(e) => setForm({ ...form, extraBonus: e.target.value })} />
+                                  </div>
+                                  <div className="field-group">
+                                    <label className="field-label">Weekly Goal (times/week)</label>
+                                    <input className="input" type="number" placeholder="3" value={form.weeklyGoal} onChange={(e) => setForm({ ...form, weeklyGoal: e.target.value })} />
+                                  </div>
+                                  <div className="field-group">
+                                    <label className="field-label">Weekly Bonus Points</label>
+                                    <input className="input" type="number" placeholder="20" value={form.weeklyBonus} onChange={(e) => setForm({ ...form, weeklyBonus: e.target.value })} />
+                                  </div>
+                                </>
+                              )}
                             </div>
                             <div className="task-controls">
                               <button className="small-button" onClick={saveTask}>Save Changes</button>
@@ -1774,6 +1889,111 @@ function App() {
               ))}
             </div>
 
+            <div className="card">
+              <div className="section-header section-header-stack">
+                <div>
+                  <h2>Long-Term Trackers</h2>
+                  <div className="section-subtitle">
+                    Cumulative goals with reward trophies. Progress here does not affect weekly points.
+                  </div>
+                </div>
+              </div>
+
+              {activeLongTermTasks.length === 0 && <p className="empty-text">No long-term trackers yet.</p>}
+
+              <div className="longterm-grid">
+                {activeLongTermTasks.map((task) => {
+                  const currentCount = Number(task.currentCount) || 0;
+                  const targetCount = Number(task.targetCount) || 0;
+                  const progressPercent = targetCount ? Math.min(100, Math.round((currentCount / targetCount) * 100)) : 0;
+                  const isComplete = targetCount > 0 && currentCount >= targetCount;
+                  const incrementValue = longTermIncrements[task.id] ?? "";
+
+                  return (
+                    <div key={task.id}>
+                      <div className={`longterm-card ${isComplete ? "is-complete" : ""}`}>
+                        <div className="longterm-card-header">
+                          <div>
+                            <h3>{task.name}</h3>
+                            <span>{task.category || "Uncategorized"}</span>
+                          </div>
+                          <div className="longterm-trophy" title={task.reward || "Reward trophy"}>
+                            {isComplete ? "🏆" : "◇"}
+                          </div>
+                        </div>
+
+                        <div className="longterm-progress-line">
+                          <strong>{currentCount.toLocaleString()}</strong>
+                          <span>/ {targetCount.toLocaleString()} {task.unitLabel || "total"}</span>
+                        </div>
+                        <div className="longterm-progress-bar-wrap">
+                          <div className="longterm-progress-bar" style={{ width: `${progressPercent}%` }} />
+                        </div>
+                        <div className="longterm-reward">
+                          <span>Reward</span>
+                          <strong>{task.reward || "No reward set"}</strong>
+                        </div>
+
+                        <div className="longterm-add-row">
+                          <input
+                            className="input"
+                            type="number"
+                            placeholder="Add"
+                            value={incrementValue}
+                            onChange={(e) => setLongTermIncrements((prev) => ({ ...prev, [task.id]: e.target.value }))}
+                          />
+                          <button className="small-button" onClick={() => updateLongTermProgress(task.id, incrementValue)}>Add</button>
+                          <button className="small-button" onClick={() => updateLongTermProgress(task.id, 1)}>+1</button>
+                        </div>
+
+                        <div className="task-action-row">
+                          <button className="task-action-mini" onClick={() => startEditTask(task)}>Edit</button>
+                          <button className="task-action-mini" onClick={() => toggleArchived(task.id)}>Archive</button>
+                          <button className="task-action-mini danger-mini" onClick={() => deleteTask(task.id)}>Delete</button>
+                        </div>
+                      </div>
+
+                      {editingTaskId === task.id && (
+                        <div className="task-form-inline">
+                          <h3 style={{margin: "0 0 14px"}}>Edit Tracker</h3>
+                          <div className="labeled-form-grid">
+                            <div className="field-group">
+                              <label className="field-label">Task Name</label>
+                              <input className="input" placeholder="Anki Reviews" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+                            </div>
+                            <div className="field-group">
+                              <label className="field-label">Category</label>
+                              <input className="input" placeholder="Education" value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value })} />
+                            </div>
+                            <div className="field-group">
+                              <label className="field-label">Target Amount</label>
+                              <input className="input" type="number" placeholder="1000" value={form.targetCount} onChange={(e) => setForm({ ...form, targetCount: e.target.value })} />
+                            </div>
+                            <div className="field-group">
+                              <label className="field-label">Current Progress</label>
+                              <input className="input" type="number" placeholder="0" value={form.currentCount} onChange={(e) => setForm({ ...form, currentCount: e.target.value })} />
+                            </div>
+                            <div className="field-group">
+                              <label className="field-label">Unit Label</label>
+                              <input className="input" placeholder="reviews" value={form.unitLabel} onChange={(e) => setForm({ ...form, unitLabel: e.target.value })} />
+                            </div>
+                            <div className="field-group">
+                              <label className="field-label">Reward Trophy</label>
+                              <input className="input" placeholder="Buy the fancy notebook" value={form.reward} onChange={(e) => setForm({ ...form, reward: e.target.value })} />
+                            </div>
+                          </div>
+                          <div className="task-controls">
+                            <button className="small-button" onClick={saveTask}>Save Changes</button>
+                            <button className="small-button archive-button" onClick={cancelEdit}>Cancel</button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
 
             <div className="card archived-card">
               <h2>Archived Tasks</h2>
@@ -1786,7 +2006,9 @@ function App() {
                     <div>
                       <div className="task-name">{task.name}</div>
                       <div className="task-details">
-                        {task.category} • {task.dailyPoints} baseline pts • +{task.extraBonus} extra
+                        {task.type === "longterm"
+                          ? `${task.category || "Uncategorized"} • ${Number(task.currentCount || 0).toLocaleString()} / ${Number(task.targetCount || 0).toLocaleString()} ${task.unitLabel || "total"}`
+                          : `${task.category} • ${task.dailyPoints} baseline pts • +${task.extraBonus} extra`}
                       </div>
                     </div>
 
@@ -2285,7 +2507,7 @@ function App() {
             <div className="card">
               <h2>Badges</h2>
               <div className="badges-grid">
-                {BADGES.map((badge) => {
+                {allBadges.map((badge) => {
                   const earned = earnedBadges[badge.id];
                   return (
                     <div key={badge.id} className={`badge-card ${earned ? "earned" : "locked"}`} title={earned ? `Earned ${earned}` : "Locked"}>
