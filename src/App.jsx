@@ -15,10 +15,21 @@ import { onAuthStateChanged, signInWithPopup, signOut } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, googleProvider, db } from "./firebase";
 
-const STEEL_BLUE = "#769fb6";
-const PACIFIC_CYAN = "#188fa7";
-const MUTED_TEAL = "#9dbbae";
+const STEEL_BLUE = "var(--steel-blue)";
+const PACIFIC_CYAN = "var(--pacific-cyan)";
+const MUTED_TEAL = "var(--muted-teal)";
 import "./App.css";
+
+const THEME_OPTIONS = [
+  { id: "light", name: "Original Light", colors: ["#087f8c", "#ef806f", "#e7b85c"] },
+  { id: "dark", name: "Original Dark", colors: ["#188fa7", "#5f879b", "#d77f6f"] },
+  { id: "harbor", name: "Harbor", colors: ["#2563a6", "#0f8b8d", "#d95d5d"] },
+  { id: "evergreen", name: "Evergreen", colors: ["#26735b", "#3f6c8d", "#d59a2d"] },
+  { id: "coral", name: "Coral", colors: ["#c94f5c", "#087f8c", "#d99b32"] },
+  { id: "indigo", name: "Indigo", colors: ["#4f46a5", "#078aa3", "#c44771"] },
+  { id: "graphite", name: "Graphite", colors: ["#3f4752", "#0f8f83", "#c9862c"] },
+  { id: "sky", name: "Sky", colors: ["#1677a8", "#23866b", "#db604b"] },
+];
 
 const todayString = () => {
   const d = new Date();
@@ -322,6 +333,7 @@ function App() {
 
   const [page, setPage] = useState("activities");
   const [theme, setTheme] = useState("light");
+  const [themeMenuOpen, setThemeMenuOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(todayString());
   const [tasks, setTasks] = useState([]);
   const [logs, setLogs] = useState({});
@@ -422,7 +434,7 @@ function App() {
 
   // Apply theme class
   useEffect(() => {
-    document.body.classList.remove("theme-light", "theme-dark");
+    document.body.classList.remove(...THEME_OPTIONS.map((option) => `theme-${option.id}`));
     document.body.classList.add(`theme-${theme}`);
   }, [theme]);
 
@@ -976,6 +988,20 @@ function App() {
     return count;
   }, [tasks, logs]);
 
+  const totalCompletions = useMemo(() => {
+    return Object.values(logs).reduce(
+      (sum, dayLog) => sum + Object.values(dayLog || {}).filter((log) => log?.completed).length,
+      0
+    );
+  }, [logs]);
+
+  const totalFreezeUses = useMemo(() => {
+    return Object.values(usedFreezes).reduce(
+      (sum, dates) => sum + (Array.isArray(dates) ? dates.length : 0),
+      0
+    );
+  }, [usedFreezes]);
+
   const totalAllTasksDays = useMemo(() => {
     if (activeTasks.length === 0) return 0;
     return Object.keys(logs).filter((date) =>
@@ -1174,10 +1200,47 @@ function App() {
         icon: "🏆",
         name: task.reward || `${task.name} Complete`,
         desc: `${task.name}: ${(Number(task.targetCount) || 0).toLocaleString()} ${task.unitLabel || "total"}`,
+        current: Number(task.currentCount) || 0,
+        target: Number(task.targetCount) || 0,
+        unitLabel: task.unitLabel || "total",
       }));
   }, [tasks]);
 
   const allBadges = useMemo(() => [...BADGES, ...longTermBadges], [longTermBadges]);
+
+  const getBadgeProgressText = (badge) => {
+    const format = (current, target, label) => {
+      const displayedCurrent = earnedBadges[badge.id] ? Math.max(current, target) : current;
+      return `${displayedCurrent.toLocaleString()} / ${target.toLocaleString()} ${label}`;
+    };
+    const numericTarget = (prefix) => Number(badge.id.slice(prefix.length).replace(/w$/, "")) || 0;
+
+    if (badge.id.startsWith("longterm_")) {
+      return format(badge.current || 0, badge.target || 0, badge.unitLabel || "total");
+    }
+    if (badge.id === "first_task") return format(totalCompletions, 1, "task completed");
+    if (badge.id.startsWith("tasks_")) return format(totalCompletions, numericTarget("tasks_"), "tasks completed");
+    if (badge.id.startsWith("streak_")) return format(maxTaskStreak, numericTarget("streak_"), "days in best task streak");
+    if (badge.id.startsWith("activity_")) return format(activityStreak, numericTarget("activity_"), "activity-streak days");
+    if (badge.id.startsWith("pts_")) return format(lifetimePoints, numericTarget("pts_"), "lifetime points");
+    if (badge.id === "great_week") return format(totalGreatWeeks, 1, "Great Week");
+    if (badge.id.startsWith("great_")) return format(totalGreatWeeks, numericTarget("great_"), "Great Weeks");
+    if (badge.id === "excellent_week") return format(totalExcellentWeeks, 1, "Excellent Week");
+    if (badge.id.startsWith("excellent_")) return format(totalExcellentWeeks, numericTarget("excellent_"), "Excellent Weeks");
+    if (badge.id === "perfect_week") return format(totalPerfectWeeks, 1, "perfect week");
+    if (badge.id.startsWith("perfect_")) return format(totalPerfectWeeks, numericTarget("perfect_"), "perfect weeks");
+    if (badge.id === "all_tasks_day") return format(totalAllTasksDays, 1, "full-task day");
+    if (badge.id.startsWith("all_tasks_")) return format(totalAllTasksDays, numericTarget("all_tasks_"), "full-task days");
+    if (badge.id.startsWith("bonus_")) return format(totalBonusEarned, numericTarget("bonus_"), "bonuses earned");
+    if (badge.id === "freeze_used") return format(totalFreezeUses, 1, "streak freeze used");
+    if (badge.id.startsWith("daily_perfect_")) return format(dailyPerfectStreak, numericTarget("daily_perfect_"), "perfect-streak days");
+    if (badge.id.startsWith("level_")) {
+      const targetLevel = numericTarget("level_");
+      const displayedLevel = earnedBadges[badge.id] ? Math.max(currentLevelData.level, targetLevel) : currentLevelData.level;
+      return `Level ${displayedLevel} / ${targetLevel}`;
+    }
+    return earnedBadges[badge.id] ? "Completed" : "Not started";
+  };
 
   const milestoneTimeline = useMemo(() => {
     return Object.entries(earnedBadges)
@@ -1210,7 +1273,6 @@ function App() {
     const allTasksCompletedToday = activeTasks.length > 0 && activeTasks.every((t) => getTaskLog(t.id, today).completed);
     const newBadges = {};
     const earn = (id) => { if (!earnedBadges[id]) newBadges[id] = today; };
-    const totalCompletions = Object.values(logs).reduce((sum, d) => sum + Object.values(d || {}).filter((l) => l?.completed).length, 0);
     if (totalCompletions >= 1) earn("first_task");
     if (totalCompletions >= 10) earn("tasks_10");
     if (totalCompletions >= 50) earn("tasks_50");
@@ -1271,7 +1333,7 @@ function App() {
       }
     });
     if (Object.keys(newBadges).length > 0) setEarnedBadges((prev) => ({ ...prev, ...newBadges }));
-  }, [logs, tasks, lifetimePoints, totalGreatWeeks, totalExcellentWeeks, totalPerfectWeeks, maxTaskStreak, activityStreak, dailyPerfectStreak, totalAllTasksDays, totalBonusEarned, currentLevelData]);
+  }, [logs, tasks, lifetimePoints, totalGreatWeeks, totalExcellentWeeks, totalPerfectWeeks, maxTaskStreak, activityStreak, dailyPerfectStreak, totalAllTasksDays, totalBonusEarned, totalCompletions, currentLevelData]);
 
   // Update personal records
   useEffect(() => {
@@ -1675,6 +1737,8 @@ function App() {
     );
   }
 
+  const currentThemeOption = THEME_OPTIONS.find((option) => option.id === theme) || THEME_OPTIONS[0];
+
   return (
     <div className="app">
       <div className="container">
@@ -1702,13 +1766,47 @@ function App() {
             >
               Progress
             </button>
-            <button
-              className="theme-toggle"
-              onClick={() => setTheme((prev) => (prev === "light" ? "dark" : "light"))}
-            >
-              {theme === "light" ? "Dark" : "Light"}
-            </button>
-            <button className="theme-toggle" onClick={handleSignOut} title={user.email}>
+            <div className="theme-picker">
+              <button
+                className="theme-toggle theme-picker-button"
+                type="button"
+                aria-haspopup="listbox"
+                aria-expanded={themeMenuOpen}
+                onClick={() => setThemeMenuOpen((open) => !open)}
+              >
+                <span className="theme-current-swatches" aria-hidden="true">
+                  {currentThemeOption.colors.map((color) => (
+                    <span key={color} className="theme-swatch" style={{ background: color }} />
+                  ))}
+                </span>
+                <span>{currentThemeOption.name}</span>
+              </button>
+              {themeMenuOpen && (
+                <div className="theme-menu" role="listbox" aria-label="Color theme">
+                  {THEME_OPTIONS.map((option) => (
+                    <button
+                      key={option.id}
+                      className={`theme-option ${option.id === theme ? "active" : ""}`}
+                      type="button"
+                      role="option"
+                      aria-selected={option.id === theme}
+                      onClick={() => {
+                        setTheme(option.id);
+                        setThemeMenuOpen(false);
+                      }}
+                    >
+                      <span className="theme-option-swatches" aria-hidden="true">
+                        {option.colors.map((color) => (
+                          <span key={color} className="theme-swatch" style={{ background: color }} />
+                        ))}
+                      </span>
+                      <span>{option.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            <button className="theme-toggle sign-out-button" onClick={handleSignOut} title={user.email}>
               Sign Out
             </button>
           </div>
@@ -2541,6 +2639,7 @@ function App() {
                       <div className="badge-icon">{earned ? badge.icon : "🔒"}</div>
                       <div className="badge-name">{badge.name}</div>
                       <div className="badge-desc">{badge.desc}</div>
+                      <div className="badge-progress">{getBadgeProgressText(badge)}</div>
                     </div>
                   );
                 })}
