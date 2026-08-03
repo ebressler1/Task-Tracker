@@ -81,36 +81,39 @@ body.theme-dark {
 }
 
 body.theme-harbor {
-  --sand-dune: #d5a33f;
-  --vanilla-custard: #d95d5d;
-  --muted-teal: #63a69f;
-  --steel-blue: #4e7396;
-  --pacific-cyan: #2563a6;
-  --bg: #f3f6f9;
-  --bg-elevated: #ffffff;
-  --bg-soft: #e8eef4;
-  --text: #172434;
-  --text-muted: #617080;
-  --border: #d7e0e9;
-  --shadow: 0 5px 18px rgba(31, 55, 78, 0.07);
-  --button-bg: #2563a6;
-  --button-secondary-bg: #0f8b8d;
-  --button-subtle-bg: rgba(37, 99, 166, 0.09);
-  --button-subtle-text: #1f4f82;
-  --pill-bg: rgba(15, 139, 141, 0.09);
-  --status-green-bg: rgba(35, 134, 107, 0.14);
-  --status-green-text: #1e594a;
-  --status-yellow-bg: rgba(213, 163, 63, 0.2);
-  --status-yellow-text: #73540f;
-  --status-red-bg: rgba(217, 93, 93, 0.14);
-  --status-red-text: #8f3434;
-  --matrix-green: #0f8b8d;
-  --matrix-red: #d95d5d;
-  --heatmap-0: #e6edf3;
-  --heatmap-1: rgba(99, 166, 159, 0.48);
-  --heatmap-2: #4e7396;
-  --heatmap-3: #347d9b;
-  --heatmap-4: #2563a6;
+  --sand-dune: #e0ae52;
+  --vanilla-custard: #eb7373;
+  --muted-teal: #72b8b1;
+  --steel-blue: #7b9ab8;
+  --pacific-cyan: #4aa3df;
+  --bg: #0e1a26;
+  --bg-elevated: #16283a;
+  --bg-soft: #122331;
+  --text: #f7fafc;
+  --text-muted: #c1ceda;
+  --border: rgba(210, 229, 245, 0.16);
+  --shadow: 0 14px 38px rgba(0, 0, 0, 0.34);
+  --button-bg: #3d8fd1;
+  --button-text: #ffffff;
+  --button-secondary-bg: #22a6a8;
+  --button-subtle-bg: rgba(255, 255, 255, 0.08);
+  --button-subtle-text: #ffffff;
+  --button-danger-bg: rgba(239, 115, 115, 0.18);
+  --button-danger-text: #ffffff;
+  --pill-bg: rgba(255, 255, 255, 0.08);
+  --status-green-bg: rgba(77, 181, 146, 0.2);
+  --status-green-text: #ffffff;
+  --status-yellow-bg: rgba(224, 174, 82, 0.2);
+  --status-yellow-text: #ffffff;
+  --status-red-bg: rgba(235, 115, 115, 0.2);
+  --status-red-text: #ffffff;
+  --matrix-green: #4fc3b5;
+  --matrix-red: #eb7373;
+  --heatmap-0: rgba(255, 255, 255, 0.07);
+  --heatmap-1: rgba(114, 184, 177, 0.35);
+  --heatmap-2: rgba(123, 154, 184, 0.62);
+  --heatmap-3: rgba(61, 143, 209, 0.8);
+  --heatmap-4: #4aa3df;
 }
 
 body.theme-evergreen {
@@ -180,69 +183,75 @@ body.theme-coral {
 }
 
 body.theme-indigo {
-  --sand-dune: #d3a139;
-  --vanilla-custard: #c44771;
-  --muted-teal: #6ba39e;
-  --steel-blue: #596b9a;
-  --pacific-cyan: #4f46a5;
-  --bg: #f5f5f9;
-  --bg-elevated: #ffffff;
-  --bg-soft: #ebeaf2;
-  --text: #222235;
-  --text-muted: #6a697d;
-  --border: #deddea;
-  --shadow: 0 5px 18px rgba(55, 51, 101, 0.07);
-  --button-bg: #4f46a5;
-  --button-secondary-bg: #078aa3;
-  --button-subtle-bg: rgba(79, 70, 165, 0.09);
-  --button-subtle-text: #403986;
-  --pill-bg: rgba(7, 138, 163, 0.09);
-  --status-green-bg: rgba(43, 139, 105, 0.14);
-  --status-green-text: #245e49;
-  --status-yellow-bg: rgba(211, 161, 57, 0.2);
-  --status-yellow-text: #70500e;
-  --status-red-bg: rgba(196, 71, 113, 0.15);
-  --status-red-text: #8b3150;
-  --matrix-green: #078aa3;
-  --matrix-red: #c44771;
-  --heatmap-0: #eae9f1;
-  --heatmap-1: rgba(107, 163, 158, 0.48);
-  --heatmap-2: #596b9a;
-  --heatmap-3: #426da2;
-  --heatmap-4: #4f46a5;
+  --sand-dune: #d9ad58;
+  --vanilla-custard: #dd6d9b;
+  --muted-teal: #75b8b1;
+  --steel-blue: #8d91c7;
+  --pacific-cyan: #8a83eb;
+  --bg: #17172a;
+  --bg-elevated: #24233b;
+  --bg-soft: #1e1d34;
+  --text: #f8f7ff;
+  --text-muted: #cbc9e1;
+  --border: rgba(224, 221, 255, 0.14);
+  --shadow: 0 14px 38px rgba(5, 5, 18, 0.38);
+  --button-bg: #6f68d9;
+  --button-text: #ffffff;
+  --button-secondary-bg: #24a9c4;
+  --button-subtle-bg: rgba(255, 255, 255, 0.08);
+  --button-subtle-text: #ffffff;
+  --button-danger-bg: rgba(221, 109, 155, 0.18);
+  --button-danger-text: #ffffff;
+  --pill-bg: rgba(255, 255, 255, 0.08);
+  --status-green-bg: rgba(74, 170, 133, 0.2);
+  --status-green-text: #ffffff;
+  --status-yellow-bg: rgba(217, 173, 88, 0.2);
+  --status-yellow-text: #ffffff;
+  --status-red-bg: rgba(221, 109, 155, 0.2);
+  --status-red-text: #ffffff;
+  --matrix-green: #24a9c4;
+  --matrix-red: #dd6d9b;
+  --heatmap-0: rgba(255, 255, 255, 0.07);
+  --heatmap-1: rgba(117, 184, 177, 0.34);
+  --heatmap-2: rgba(141, 145, 199, 0.62);
+  --heatmap-3: rgba(111, 104, 217, 0.82);
+  --heatmap-4: #8a83eb;
 }
 
 body.theme-graphite {
-  --sand-dune: #c9862c;
-  --vanilla-custard: #c95e62;
-  --muted-teal: #6e9e93;
-  --steel-blue: #667789;
-  --pacific-cyan: #3f4752;
-  --bg: #f2f4f5;
-  --bg-elevated: #ffffff;
-  --bg-soft: #e7eaec;
-  --text: #1e2329;
-  --text-muted: #656e77;
-  --border: #d9dee2;
-  --shadow: 0 5px 18px rgba(34, 40, 47, 0.07);
-  --button-bg: #3f4752;
-  --button-secondary-bg: #0f8f83;
-  --button-subtle-bg: rgba(63, 71, 82, 0.09);
-  --button-subtle-text: #3f4752;
-  --pill-bg: rgba(15, 143, 131, 0.09);
-  --status-green-bg: rgba(38, 132, 91, 0.14);
-  --status-green-text: #255b44;
-  --status-yellow-bg: rgba(201, 134, 44, 0.2);
-  --status-yellow-text: #70490b;
-  --status-red-bg: rgba(201, 94, 98, 0.15);
-  --status-red-text: #87393c;
-  --matrix-green: #0f8f83;
-  --matrix-red: #c95e62;
-  --heatmap-0: #e4e8e9;
-  --heatmap-1: rgba(110, 158, 147, 0.48);
-  --heatmap-2: #667789;
-  --heatmap-3: #3f7f7a;
-  --heatmap-4: #3f4752;
+  --sand-dune: #d5a04d;
+  --vanilla-custard: #db7378;
+  --muted-teal: #79aa9e;
+  --steel-blue: #8b98a6;
+  --pacific-cyan: #6d7784;
+  --bg: #14171b;
+  --bg-elevated: #21262c;
+  --bg-soft: #1a1f24;
+  --text: #f5f7f8;
+  --text-muted: #c1c8ce;
+  --border: rgba(230, 235, 239, 0.14);
+  --shadow: 0 14px 38px rgba(0, 0, 0, 0.38);
+  --button-bg: #56616d;
+  --button-text: #ffffff;
+  --button-secondary-bg: #19a596;
+  --button-subtle-bg: rgba(255, 255, 255, 0.08);
+  --button-subtle-text: #ffffff;
+  --button-danger-bg: rgba(219, 115, 120, 0.18);
+  --button-danger-text: #ffffff;
+  --pill-bg: rgba(255, 255, 255, 0.08);
+  --status-green-bg: rgba(63, 166, 124, 0.2);
+  --status-green-text: #ffffff;
+  --status-yellow-bg: rgba(213, 160, 77, 0.2);
+  --status-yellow-text: #ffffff;
+  --status-red-bg: rgba(219, 115, 120, 0.2);
+  --status-red-text: #ffffff;
+  --matrix-green: #19a596;
+  --matrix-red: #db7378;
+  --heatmap-0: rgba(255, 255, 255, 0.07);
+  --heatmap-1: rgba(121, 170, 158, 0.34);
+  --heatmap-2: rgba(139, 152, 166, 0.62);
+  --heatmap-3: rgba(25, 165, 150, 0.72);
+  --heatmap-4: #19a596;
 }
 
 body.theme-sky {
@@ -428,7 +437,10 @@ h3 {
   font-weight: 700;
 }
 
-body.theme-dark .nav-button {
+body.theme-dark .nav-button,
+body.theme-harbor .nav-button,
+body.theme-indigo .nav-button,
+body.theme-graphite .nav-button {
   background: rgba(255, 255, 255, 0.04);
 }
 
@@ -946,7 +958,10 @@ body.theme-dark .nav-button {
   padding: 16px;
 }
 
-body.theme-dark .category-streak-card {
+body.theme-dark .category-streak-card,
+body.theme-harbor .category-streak-card,
+body.theme-indigo .category-streak-card,
+body.theme-graphite .category-streak-card {
   background: rgba(255, 255, 255, 0.04);
 }
 
@@ -1145,7 +1160,10 @@ body.theme-dark .category-streak-card {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-body.theme-dark .task-compact-card {
+body.theme-dark .task-compact-card,
+body.theme-harbor .task-compact-card,
+body.theme-indigo .task-compact-card,
+body.theme-graphite .task-compact-card {
   background: rgba(255, 255, 255, 0.03);
 }
 
@@ -1347,7 +1365,19 @@ body.theme-dark .task-compact-card {
 body.theme-dark .detail-meta-grid > div,
 body.theme-dark .focus-item,
 body.theme-dark .review-row,
-body.theme-dark .timeline-item {
+body.theme-dark .timeline-item,
+body.theme-harbor .detail-meta-grid > div,
+body.theme-harbor .focus-item,
+body.theme-harbor .review-row,
+body.theme-harbor .timeline-item,
+body.theme-indigo .detail-meta-grid > div,
+body.theme-indigo .focus-item,
+body.theme-indigo .review-row,
+body.theme-indigo .timeline-item,
+body.theme-graphite .detail-meta-grid > div,
+body.theme-graphite .focus-item,
+body.theme-graphite .review-row,
+body.theme-graphite .timeline-item {
   background: rgba(255, 255, 255, 0.04);
 }
 
@@ -1659,7 +1689,10 @@ body.theme-dark .timeline-item {
   margin: 16px 0 0;
 }
 
-body.theme-dark .task-form-inline {
+body.theme-dark .task-form-inline,
+body.theme-harbor .task-form-inline,
+body.theme-indigo .task-form-inline,
+body.theme-graphite .task-form-inline {
   background: rgba(255, 255, 255, 0.04);
 }
 
