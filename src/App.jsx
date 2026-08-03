@@ -1805,7 +1805,10 @@ function App() {
                 {activeLongTermTasks.map((task) => {
                   const currentCount = Number(task.currentCount) || 0;
                   const targetCount = Number(task.targetCount) || 0;
-                  const progressPercent = targetCount ? Math.min(100, Math.round((currentCount / targetCount) * 100)) : 0;
+                  const progressWidthPercent = targetCount
+                    ? Math.min(100, Math.max(0, (currentCount / targetCount) * 100))
+                    : 0;
+                  const progressPercent = Math.round(progressWidthPercent);
                   const isComplete = targetCount > 0 && currentCount >= targetCount;
                   const incrementValue = longTermIncrements[task.id] ?? "";
                   const detailsExpanded = Boolean(expandedLongTermTasks[task.id]);
@@ -1830,7 +1833,10 @@ function App() {
                             aria-valuenow={Math.min(currentCount, targetCount)}
                             aria-valuetext={`${currentCount.toLocaleString()} of ${targetCount.toLocaleString()} ${task.unitLabel || "total"}`}
                           >
-                            <span className="longterm-progress-bar" style={{ width: `${progressPercent}%` }} />
+                            <span
+                              className="longterm-progress-bar"
+                              style={{ width: `${progressWidthPercent}%`, minWidth: currentCount > 0 ? "2px" : 0 }}
+                            />
                           </span>
                         </button>
 
@@ -1859,7 +1865,10 @@ function App() {
                               aria-valuenow={Math.min(currentCount, targetCount)}
                               aria-valuetext={`${currentCount.toLocaleString()} of ${targetCount.toLocaleString()} ${task.unitLabel || "total"}`}
                             >
-                              <div className="longterm-progress-bar" style={{ width: `${progressPercent}%` }} />
+                              <div
+                                className="longterm-progress-bar"
+                                style={{ width: `${progressWidthPercent}%`, minWidth: currentCount > 0 ? "2px" : 0 }}
+                              />
                             </div>
                             <div className="longterm-progress-status">
                               <span>{progressPercent}% complete</span>
