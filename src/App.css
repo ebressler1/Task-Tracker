@@ -1527,6 +1527,14 @@ body.theme-dark .task-form-inline {
   background: rgba(24, 143, 167, 0.05);
 }
 
+.longterm-mobile-summary {
+  display: none;
+}
+
+.longterm-detail-panel {
+  display: contents;
+}
+
 .longterm-card-header {
   display: flex;
   align-items: flex-start;
@@ -1836,28 +1844,73 @@ body.theme-dark .task-form-inline {
   }
 
   .longterm-card {
-    padding: 8px;
+    display: block;
+    overflow: hidden;
+    padding: 0;
+  }
+
+  .longterm-mobile-summary {
+    display: grid;
+    width: 100%;
+    grid-template-rows: auto 6px;
+    gap: 7px;
+    padding: 9px 10px;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .longterm-mobile-summary:focus-visible {
+    outline: 2px solid var(--pacific-cyan);
+    outline-offset: -2px;
+  }
+
+  .longterm-mobile-title {
+    overflow: hidden;
+    font-size: 14px;
+    font-weight: 750;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .longterm-mobile-progress-wrap {
+    display: block;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(118, 159, 182, 0.16);
+  }
+
+  .longterm-detail-panel {
+    display: none;
+  }
+
+  .longterm-card.is-expanded .longterm-detail-panel {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 0 10px 10px;
+  }
+
+  .longterm-detail-panel .longterm-card-header {
+    display: none;
+  }
+
+  .longterm-card.is-expanded .longterm-progress-group {
+    padding-top: 8px;
+    border-top: 1px solid var(--border);
+  }
+
+  .longterm-card.is-expanded .longterm-progress-bar-wrap {
+    display: none;
   }
 
   .longterm-progress-status,
   .longterm-reward {
     font-size: 11px;
-  }
-
-  .task-section-card .section-header-stack {
-    align-items: stretch;
-  }
-
-  .task-section-card .section-count {
-    align-self: flex-start;
-  }
-
-}
-
-@media (max-width: 600px) {
-  .longterm-card {
-    grid-template-columns: 1fr;
-    gap: 6px;
   }
 
   .longterm-control-group {
@@ -1872,6 +1925,15 @@ body.theme-dark .task-form-inline {
   .longterm-control-group > .task-action-row {
     justify-content: flex-start;
   }
+
+  .task-section-card .section-header-stack {
+    align-items: stretch;
+  }
+
+  .task-section-card .section-count {
+    align-self: flex-start;
+  }
+
 }
 
 /* ── Completion animation ─────────────────────────────────────── */
