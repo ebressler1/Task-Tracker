@@ -80,6 +80,204 @@ body.theme-dark {
   --heatmap-4: #188fa7;
 }
 
+body.theme-harbor {
+  --sand-dune: #d5a33f;
+  --vanilla-custard: #d95d5d;
+  --muted-teal: #63a69f;
+  --steel-blue: #4e7396;
+  --pacific-cyan: #2563a6;
+  --bg: #f3f6f9;
+  --bg-elevated: #ffffff;
+  --bg-soft: #e8eef4;
+  --text: #172434;
+  --text-muted: #617080;
+  --border: #d7e0e9;
+  --shadow: 0 5px 18px rgba(31, 55, 78, 0.07);
+  --button-bg: #2563a6;
+  --button-secondary-bg: #0f8b8d;
+  --button-subtle-bg: rgba(37, 99, 166, 0.09);
+  --button-subtle-text: #1f4f82;
+  --pill-bg: rgba(15, 139, 141, 0.09);
+  --status-green-bg: rgba(35, 134, 107, 0.14);
+  --status-green-text: #1e594a;
+  --status-yellow-bg: rgba(213, 163, 63, 0.2);
+  --status-yellow-text: #73540f;
+  --status-red-bg: rgba(217, 93, 93, 0.14);
+  --status-red-text: #8f3434;
+  --matrix-green: #0f8b8d;
+  --matrix-red: #d95d5d;
+  --heatmap-0: #e6edf3;
+  --heatmap-1: rgba(99, 166, 159, 0.48);
+  --heatmap-2: #4e7396;
+  --heatmap-3: #347d9b;
+  --heatmap-4: #2563a6;
+}
+
+body.theme-evergreen {
+  --sand-dune: #d59a2d;
+  --vanilla-custard: #cf6e5b;
+  --muted-teal: #7aa38e;
+  --steel-blue: #3f6c8d;
+  --pacific-cyan: #26735b;
+  --bg: #f3f6f3;
+  --bg-elevated: #ffffff;
+  --bg-soft: #e7eee9;
+  --text: #17251f;
+  --text-muted: #64736b;
+  --border: #d6e1da;
+  --shadow: 0 5px 18px rgba(32, 67, 50, 0.07);
+  --button-bg: #26735b;
+  --button-secondary-bg: #3f6c8d;
+  --button-subtle-bg: rgba(38, 115, 91, 0.09);
+  --button-subtle-text: #245d4b;
+  --pill-bg: rgba(38, 115, 91, 0.09);
+  --status-green-bg: rgba(38, 115, 91, 0.14);
+  --status-green-text: #235644;
+  --status-yellow-bg: rgba(213, 154, 45, 0.2);
+  --status-yellow-text: #704d0c;
+  --status-red-bg: rgba(207, 110, 91, 0.15);
+  --status-red-text: #8d4235;
+  --matrix-green: #26735b;
+  --matrix-red: #cf6e5b;
+  --heatmap-0: #e5ece7;
+  --heatmap-1: rgba(122, 163, 142, 0.48);
+  --heatmap-2: #5c8872;
+  --heatmap-3: #3f8066;
+  --heatmap-4: #26735b;
+}
+
+body.theme-coral {
+  --sand-dune: #d99b32;
+  --vanilla-custard: #c94f5c;
+  --muted-teal: #73a398;
+  --steel-blue: #477b92;
+  --pacific-cyan: #087f8c;
+  --bg: #f7f4f4;
+  --bg-elevated: #ffffff;
+  --bg-soft: #f0e8e9;
+  --text: #2a2024;
+  --text-muted: #75666b;
+  --border: #e6d9dc;
+  --shadow: 0 5px 18px rgba(74, 42, 49, 0.07);
+  --button-bg: #c94f5c;
+  --button-secondary-bg: #087f8c;
+  --button-subtle-bg: rgba(201, 79, 92, 0.09);
+  --button-subtle-text: #8a3540;
+  --pill-bg: rgba(8, 127, 140, 0.09);
+  --status-green-bg: rgba(53, 137, 99, 0.14);
+  --status-green-text: #275f47;
+  --status-yellow-bg: rgba(217, 155, 50, 0.2);
+  --status-yellow-text: #72500e;
+  --status-red-bg: rgba(201, 79, 92, 0.15);
+  --status-red-text: #8a3540;
+  --matrix-green: #087f8c;
+  --matrix-red: #c94f5c;
+  --heatmap-0: #eee7e8;
+  --heatmap-1: rgba(115, 163, 152, 0.48);
+  --heatmap-2: #477b92;
+  --heatmap-3: #2c8390;
+  --heatmap-4: #c94f5c;
+}
+
+body.theme-indigo {
+  --sand-dune: #d3a139;
+  --vanilla-custard: #c44771;
+  --muted-teal: #6ba39e;
+  --steel-blue: #596b9a;
+  --pacific-cyan: #4f46a5;
+  --bg: #f5f5f9;
+  --bg-elevated: #ffffff;
+  --bg-soft: #ebeaf2;
+  --text: #222235;
+  --text-muted: #6a697d;
+  --border: #deddea;
+  --shadow: 0 5px 18px rgba(55, 51, 101, 0.07);
+  --button-bg: #4f46a5;
+  --button-secondary-bg: #078aa3;
+  --button-subtle-bg: rgba(79, 70, 165, 0.09);
+  --button-subtle-text: #403986;
+  --pill-bg: rgba(7, 138, 163, 0.09);
+  --status-green-bg: rgba(43, 139, 105, 0.14);
+  --status-green-text: #245e49;
+  --status-yellow-bg: rgba(211, 161, 57, 0.2);
+  --status-yellow-text: #70500e;
+  --status-red-bg: rgba(196, 71, 113, 0.15);
+  --status-red-text: #8b3150;
+  --matrix-green: #078aa3;
+  --matrix-red: #c44771;
+  --heatmap-0: #eae9f1;
+  --heatmap-1: rgba(107, 163, 158, 0.48);
+  --heatmap-2: #596b9a;
+  --heatmap-3: #426da2;
+  --heatmap-4: #4f46a5;
+}
+
+body.theme-graphite {
+  --sand-dune: #c9862c;
+  --vanilla-custard: #c95e62;
+  --muted-teal: #6e9e93;
+  --steel-blue: #667789;
+  --pacific-cyan: #3f4752;
+  --bg: #f2f4f5;
+  --bg-elevated: #ffffff;
+  --bg-soft: #e7eaec;
+  --text: #1e2329;
+  --text-muted: #656e77;
+  --border: #d9dee2;
+  --shadow: 0 5px 18px rgba(34, 40, 47, 0.07);
+  --button-bg: #3f4752;
+  --button-secondary-bg: #0f8f83;
+  --button-subtle-bg: rgba(63, 71, 82, 0.09);
+  --button-subtle-text: #3f4752;
+  --pill-bg: rgba(15, 143, 131, 0.09);
+  --status-green-bg: rgba(38, 132, 91, 0.14);
+  --status-green-text: #255b44;
+  --status-yellow-bg: rgba(201, 134, 44, 0.2);
+  --status-yellow-text: #70490b;
+  --status-red-bg: rgba(201, 94, 98, 0.15);
+  --status-red-text: #87393c;
+  --matrix-green: #0f8f83;
+  --matrix-red: #c95e62;
+  --heatmap-0: #e4e8e9;
+  --heatmap-1: rgba(110, 158, 147, 0.48);
+  --heatmap-2: #667789;
+  --heatmap-3: #3f7f7a;
+  --heatmap-4: #3f4752;
+}
+
+body.theme-sky {
+  --sand-dune: #d7a13b;
+  --vanilla-custard: #db604b;
+  --muted-teal: #6aa995;
+  --steel-blue: #4e82a1;
+  --pacific-cyan: #1677a8;
+  --bg: #f2f7f9;
+  --bg-elevated: #ffffff;
+  --bg-soft: #e5eff3;
+  --text: #17262e;
+  --text-muted: #60727b;
+  --border: #d4e2e8;
+  --shadow: 0 5px 18px rgba(31, 72, 91, 0.07);
+  --button-bg: #1677a8;
+  --button-secondary-bg: #23866b;
+  --button-subtle-bg: rgba(22, 119, 168, 0.09);
+  --button-subtle-text: #1b6082;
+  --pill-bg: rgba(35, 134, 107, 0.09);
+  --status-green-bg: rgba(35, 134, 107, 0.14);
+  --status-green-text: #245c4a;
+  --status-yellow-bg: rgba(215, 161, 59, 0.2);
+  --status-yellow-text: #71510f;
+  --status-red-bg: rgba(219, 96, 75, 0.15);
+  --status-red-text: #8f3f33;
+  --matrix-green: #23866b;
+  --matrix-red: #db604b;
+  --heatmap-0: #e3edf1;
+  --heatmap-1: rgba(106, 169, 149, 0.48);
+  --heatmap-2: #4e82a1;
+  --heatmap-3: #2f829e;
+  --heatmap-4: #1677a8;
+}
+
 html,
 body,
 #root {
@@ -277,6 +475,74 @@ body.theme-dark .nav-button {
   border-radius: 6px;
   cursor: pointer;
   font-weight: 700;
+}
+
+.theme-picker {
+  position: relative;
+}
+
+.theme-picker-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.theme-current-swatches,
+.theme-option-swatches {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.theme-swatch {
+  width: 10px;
+  height: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 50%;
+}
+
+.theme-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  display: grid;
+  width: min(340px, calc(100vw - 32px));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  box-shadow: 0 16px 40px rgba(20, 34, 40, 0.18);
+}
+
+.theme-option {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.theme-option:hover,
+.theme-option.active {
+  border-color: var(--border);
+  background: var(--button-subtle-bg);
+}
+
+.theme-option.active {
+  color: var(--button-subtle-text);
 }
 
 .card {
@@ -1594,16 +1860,19 @@ body.theme-dark .task-form-inline {
 }
 
 .longterm-progress-bar-wrap {
-  height: 6px;
+  height: 8px;
   overflow: hidden;
   border-radius: 999px;
-  background: rgba(118, 159, 182, 0.16);
+  background: var(--bg-soft);
+  box-shadow: inset 0 0 0 1px var(--border);
 }
 
 .longterm-progress-bar {
+  display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--pacific-cyan);
+  background: linear-gradient(90deg, var(--button-secondary-bg), var(--pacific-cyan));
+  box-shadow: 0 0 8px rgba(24, 143, 167, 0.24);
   transition: width 0.25s ease;
 }
 
@@ -1808,12 +2077,17 @@ body.theme-dark .task-form-inline {
     width: 100%;
   }
 
-  .top-bar-actions > button:nth-child(4) {
+  .top-bar-actions > .theme-picker {
     grid-column: 1;
   }
 
-  .top-bar-actions > button:nth-child(5) {
+  .top-bar-actions > .sign-out-button {
     grid-column: 2 / 4;
+  }
+
+  .theme-picker-button {
+    width: 100%;
+    justify-content: center;
   }
 
   .nav-button,
@@ -1852,7 +2126,7 @@ body.theme-dark .task-form-inline {
   .longterm-mobile-summary {
     display: grid;
     width: 100%;
-    grid-template-rows: auto 6px;
+    grid-template-rows: auto 8px;
     gap: 7px;
     padding: 9px 10px;
     border: 0;
@@ -1878,10 +2152,11 @@ body.theme-dark .task-form-inline {
 
   .longterm-mobile-progress-wrap {
     display: block;
-    height: 6px;
+    height: 8px;
     overflow: hidden;
     border-radius: 999px;
-    background: rgba(118, 159, 182, 0.16);
+    background: var(--bg-soft);
+    box-shadow: inset 0 0 0 1px var(--border);
   }
 
   .longterm-detail-panel {
@@ -2192,13 +2467,22 @@ body.theme-dark .task-form-inline {
 }
 
 .badge-card.earned {
-  border-color: rgba(24, 143, 167, 0.4);
-  background: rgba(24, 143, 167, 0.05);
+  border-color: var(--pacific-cyan);
+  background: var(--button-subtle-bg);
 }
 
 .badge-card.locked {
-  opacity: 0.42;
-  filter: grayscale(0.6);
+  background: var(--bg-soft);
+}
+
+.badge-card.locked .badge-icon {
+  opacity: 0.48;
+  filter: grayscale(0.7);
+}
+
+.badge-card.locked .badge-name,
+.badge-card.locked .badge-desc {
+  opacity: 0.68;
 }
 
 .badge-icon {
@@ -2220,16 +2504,26 @@ body.theme-dark .task-form-inline {
   line-height: 1.3;
 }
 
+.badge-progress {
+  margin-top: 8px;
+  padding-top: 7px;
+  border-top: 1px solid var(--border);
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
 /* ── Responsive tweaks for longterm page ─────────────────────── */
 @media (max-width: 480px) {
   .top-bar-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .top-bar-actions > button:nth-child(4),
-  .top-bar-actions > button:nth-child(5) {
+  .top-bar-actions > .theme-picker,
+  .top-bar-actions > .sign-out-button {
     grid-column: auto;
   }
-  .top-bar-actions > button:nth-child(5) {
+  .top-bar-actions > .sign-out-button {
     grid-column: 1 / -1;
   }
   .custom-category-row {
