@@ -5,6 +5,7 @@ import {
   Line,
   BarChart,
   Bar,
+  ComposedChart,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -21,19 +22,35 @@ const MUTED_TEAL = "var(--muted-teal)";
 import "./App.css";
 
 const THEME_OPTIONS = [
-  { id: "light", name: "Original Light", colors: ["#087f8c", "#ef806f", "#e7b85c"] },
-  { id: "dark", name: "Original Dark", colors: ["#188fa7", "#5f879b", "#d77f6f"] },
-  { id: "harbor", name: "Harbor", colors: ["#2563a6", "#0f8b8d", "#d95d5d"] },
-  { id: "evergreen", name: "Evergreen", colors: ["#26735b", "#3f6c8d", "#d59a2d"] },
-  { id: "coral", name: "Coral", colors: ["#c94f5c", "#087f8c", "#d99b32"] },
-  { id: "indigo", name: "Indigo", colors: ["#4f46a5", "#078aa3", "#c44771"] },
-  { id: "graphite", name: "Graphite", colors: ["#3f4752", "#0f8f83", "#c9862c"] },
-  { id: "sky", name: "Sky", colors: ["#1677a8", "#23866b", "#db604b"] },
+  { id: "light", name: "Original Light", colors: ["#f3f6f5", "#087f8c", "#ef806f"] },
+  { id: "dark", name: "Original Dark", colors: ["#0f171c", "#188fa7", "#d77f6f"] },
+  { id: "sky", name: "Coastal Light", colors: ["#eaf4f8", "#0077a8", "#dd5c4b"] },
+  { id: "harbor", name: "Coastal Dark", colors: ["#071927", "#1fa6c7", "#f07b63"] },
+  { id: "evergreen", name: "Botanical Light", colors: ["#edf4ec", "#2c6a4f", "#be7e2f"] },
+  { id: "graphite", name: "Botanical Dark", colors: ["#0c1c16", "#43a77d", "#d6a64b"] },
+  { id: "coral", name: "Studio Light", colors: ["#f5eef2", "#a33d65", "#3f718a"] },
+  { id: "indigo", name: "Studio Dark", colors: ["#1d1420", "#d0618b", "#6bb7c9"] },
 ];
 
 const todayString = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+};
+
+const progressHistoryDate = (timestamp, includeTime = false) => {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return "Date unavailable";
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    ...(includeTime ? { year: "numeric", hour: "numeric", minute: "2-digit" } : {}),
+  });
+};
+
+const progressHistoryDayKey = (timestamp) => {
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return String(timestamp || "unknown");
+  return `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
 };
 
 const DEFAULT_CATEGORIES = [
@@ -355,6 +372,7 @@ function App() {
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [longTermIncrements, setLongTermIncrements] = useState({});
   const [expandedLongTermTasks, setExpandedLongTermTasks] = useState({});
+  const [expandedLongTermHistory, setExpandedLongTermHistory] = useState({});
   const [formError, setFormError] = useState("");
 
 
@@ -410,6 +428,9 @@ function App() {
             currentCount: task.currentCount ?? 0,
             unitLabel: task.unitLabel ?? "",
             reward: task.reward ?? "",
+            progressHistory: Array.isArray(task.progressHistory)
+              ? task.progressHistory.filter((entry) => entry && Number.isFinite(Number(entry.amount)))
+              : [],
             active: task.active ?? true,
           })));
         } else {
@@ -1436,9 +1457,31 @@ function App() {
 
     if (editingTaskId) {
       setTasks((prev) =>
-        prev.map((task) =>
-          task.id === editingTaskId ? { ...task, ...taskPayload } : task
-        )
+        prev.map((task) => {
+          if (task.id !== editingTaskId) return task;
+
+          let progressHistory = Array.isArray(task.progressHistory) ? task.progressHistory : [];
+          if (taskType === "longterm") {
+            const previousCount = task.type === "longterm" ? Number(task.currentCount) || 0 : 0;
+            const adjustment = currentCount - previousCount;
+            if (adjustment !== 0) {
+              progressHistory = [
+                ...progressHistory,
+                {
+                  id: `${Date.now()}-adjustment`,
+                  timestamp: new Date().toISOString(),
+                  amount: adjustment,
+                  total: currentCount,
+                  kind: task.type === "longterm" ? "adjustment" : "starting",
+                },
+              ];
+            }
+          } else {
+            progressHistory = [];
+          }
+
+          return { ...task, ...taskPayload, progressHistory };
+        })
       );
     } else {
       setTasks((prev) => [
@@ -1447,6 +1490,15 @@ function App() {
           id: Date.now(),
           active: true,
           ...taskPayload,
+          progressHistory: taskType === "longterm" && currentCount > 0
+            ? [{
+                id: `${Date.now()}-starting`,
+                timestamp: new Date().toISOString(),
+                amount: currentCount,
+                total: currentCount,
+                kind: "starting",
+              }]
+            : [],
         },
       ]);
     }
@@ -1496,7 +1548,21 @@ function App() {
       prev.map((task) => {
         if (task.id !== taskId) return task;
         const currentCount = Math.max(0, (Number(task.currentCount) || 0) + delta);
-        return { ...task, currentCount };
+        const progressHistory = Array.isArray(task.progressHistory) ? task.progressHistory : [];
+        return {
+          ...task,
+          currentCount,
+          progressHistory: [
+            ...progressHistory,
+            {
+              id: `${Date.now()}-${progressHistory.length}`,
+              timestamp: new Date().toISOString(),
+              amount: delta,
+              total: currentCount,
+              kind: "increment",
+            },
+          ],
+        };
       })
     );
     setLongTermIncrements((prev) => ({ ...prev, [taskId]: "" }));
@@ -1910,6 +1976,23 @@ function App() {
                   const isComplete = targetCount > 0 && currentCount >= targetCount;
                   const incrementValue = longTermIncrements[task.id] ?? "";
                   const detailsExpanded = Boolean(expandedLongTermTasks[task.id]);
+                  const historyExpanded = Boolean(expandedLongTermHistory[task.id]);
+                  const progressHistory = (Array.isArray(task.progressHistory) ? task.progressHistory : [])
+                    .filter((entry) => entry && Number.isFinite(Number(entry.amount)))
+                    .slice()
+                    .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+                  const progressByDay = Array.from(progressHistory.reduce((days, entry) => {
+                    const dayKey = progressHistoryDayKey(entry.timestamp);
+                    const existing = days.get(dayKey) || {
+                      day: progressHistoryDate(entry.timestamp),
+                      added: 0,
+                      total: Number(entry.total) || 0,
+                    };
+                    existing.added += Number(entry.amount) || 0;
+                    existing.total = Number(entry.total) || existing.total;
+                    days.set(dayKey, existing);
+                    return days;
+                  }, new Map()).values()).slice(-14);
 
                   return (
                     <div key={task.id}>
@@ -1919,7 +2002,12 @@ function App() {
                           type="button"
                           aria-expanded={detailsExpanded}
                           aria-controls={`longterm-details-${task.id}`}
-                          onClick={() => setExpandedLongTermTasks((prev) => ({ ...prev, [task.id]: !prev[task.id] }))}
+                          onClick={() => {
+                            setExpandedLongTermTasks((prev) => ({ ...prev, [task.id]: !prev[task.id] }));
+                            if (detailsExpanded) {
+                              setExpandedLongTermHistory((prev) => ({ ...prev, [task.id]: false }));
+                            }
+                          }}
                         >
                           <span className="longterm-mobile-title">{task.name}</span>
                           <span
@@ -1933,7 +2021,7 @@ function App() {
                           >
                             <span
                               className="longterm-progress-bar"
-                              style={{ width: `${progressWidthPercent}%`, minWidth: currentCount > 0 ? "2px" : 0 }}
+                              style={{ width: `${progressWidthPercent}%`, minWidth: currentCount > 0 ? "4px" : 0 }}
                             />
                           </span>
                         </button>
@@ -1965,7 +2053,7 @@ function App() {
                             >
                               <div
                                 className="longterm-progress-bar"
-                                style={{ width: `${progressWidthPercent}%`, minWidth: currentCount > 0 ? "2px" : 0 }}
+                                style={{ width: `${progressWidthPercent}%`, minWidth: currentCount > 0 ? "4px" : 0 }}
                               />
                             </div>
                             <div className="longterm-progress-status">
@@ -2005,6 +2093,15 @@ function App() {
                             </div>
 
                             <div className="task-action-row">
+                              <button
+                                className="task-action-mini history-mini"
+                                type="button"
+                                aria-expanded={historyExpanded}
+                                aria-controls={`longterm-history-${task.id}`}
+                                onClick={() => setExpandedLongTermHistory((prev) => ({ ...prev, [task.id]: !prev[task.id] }))}
+                              >
+                                History
+                              </button>
                               <button className="task-action-mini" onClick={() => startEditTask(task)}>Edit</button>
                               <button className="task-action-mini" onClick={() => toggleArchived(task.id)}>Archive</button>
                               <button className="task-action-mini danger-mini" onClick={() => deleteTask(task.id)}>Delete</button>
@@ -2012,6 +2109,69 @@ function App() {
                           </div>
                         </div>
                       </div>
+
+                      {historyExpanded && (
+                        <section id={`longterm-history-${task.id}`} className="longterm-history-panel" aria-label={`${task.name} progress history`}>
+                          <div className="longterm-history-header">
+                            <div>
+                              <span className="section-kicker">Cumulative activity</span>
+                              <h3>Progress history</h3>
+                            </div>
+                            <div className="longterm-history-summary">
+                              <strong>{progressHistory.length}</strong>
+                              <span>{progressHistory.length === 1 ? "update" : "updates"}</span>
+                            </div>
+                          </div>
+
+                          {progressHistory.length === 0 ? (
+                            <p className="longterm-history-empty">No progress activity has been recorded yet. Your next addition will appear here.</p>
+                          ) : (
+                            <div className="longterm-history-layout">
+                              <div className="longterm-history-chart">
+                                <div className="longterm-history-legend" aria-hidden="true">
+                                  <span><i className="history-bar-key" />Added</span>
+                                  <span><i className="history-line-key" />Running total</span>
+                                </div>
+                                <ResponsiveContainer width="100%" height={220}>
+                                  <ComposedChart data={progressByDay} margin={{ top: 8, right: 8, bottom: 0, left: -16 }}>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" vertical={false} />
+                                    <XAxis dataKey="day" tickLine={false} axisLine={false} />
+                                    <YAxis yAxisId="added" allowDecimals={false} tickLine={false} axisLine={false} />
+                                    <YAxis yAxisId="total" orientation="right" allowDecimals={false} tickLine={false} axisLine={false} />
+                                    <Tooltip />
+                                    <Bar yAxisId="added" dataKey="added" fill={PACIFIC_CYAN} radius={[4, 4, 0, 0]} name={`Added ${task.unitLabel || "progress"}`} />
+                                    <Line yAxisId="total" type="monotone" dataKey="total" stroke={STEEL_BLUE} strokeWidth={3} dot={{ r: 3 }} name="Running total" />
+                                  </ComposedChart>
+                                </ResponsiveContainer>
+                              </div>
+
+                              <div className="longterm-history-list" aria-label="Recorded progress updates">
+                                {progressHistory.slice().reverse().map((entry) => {
+                                  const amount = Number(entry.amount) || 0;
+                                  const entryLabel = entry.kind === "starting"
+                                    ? "Starting progress"
+                                    : entry.kind === "adjustment"
+                                      ? "Progress adjusted"
+                                      : "Progress added";
+                                  return (
+                                    <div key={entry.id || `${entry.timestamp}-${entry.total}`} className="longterm-history-item">
+                                      <div className="longterm-history-marker" />
+                                      <div className="longterm-history-copy">
+                                        <strong>{entryLabel}</strong>
+                                        <time dateTime={entry.timestamp}>{progressHistoryDate(entry.timestamp, true)}</time>
+                                      </div>
+                                      <div className="longterm-history-values">
+                                        <strong className={amount < 0 ? "is-negative" : ""}>{amount > 0 ? "+" : ""}{amount.toLocaleString()}</strong>
+                                        <span>{Number(entry.total || 0).toLocaleString()} total</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+                        </section>
+                      )}
 
                       {editingTaskId === task.id && renderTaskForm({ title: task.name, submitLabel: "Save changes" })}
                     </div>
