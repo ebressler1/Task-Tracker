@@ -413,26 +413,53 @@ function App() {
       if (snap.exists()) {
         const data = snap.data();
         if (data.tasks) {
-          setTasks(data.tasks.map((task) => ({
-            id: task.id ?? Date.now() + Math.random(),
-            name: task.name ?? "",
-            category: task.category ?? "",
-            dailyGoal: task.dailyGoal ?? "",
-            dailyPoints: task.dailyPoints ?? 0,
-            extraThreshold: task.extraThreshold ?? "",
-            extraBonus: task.extraBonus ?? 0,
-            weeklyGoal: task.weeklyGoal ?? 0,
-            weeklyBonus: task.weeklyBonus ?? 0,
-            type: task.type ?? "weekly",
-            targetCount: task.targetCount ?? 0,
-            currentCount: task.currentCount ?? 0,
-            unitLabel: task.unitLabel ?? "",
-            reward: task.reward ?? "",
-            progressHistory: Array.isArray(task.progressHistory)
+          const yesterday = new Date();
+          yesterday.setDate(yesterday.getDate() - 1);
+          const yesterdayTimestamp = yesterday.toISOString();
+          let migratedProgressHistory = false;
+
+          const loadedTasks = data.tasks.map((task) => {
+            const type = task.type ?? "weekly";
+            const currentCount = Number(task.currentCount) || 0;
+            let progressHistory = Array.isArray(task.progressHistory)
               ? task.progressHistory.filter((entry) => entry && Number.isFinite(Number(entry.amount)))
-              : [],
-            active: task.active ?? true,
-          })));
+              : [];
+
+            if (type === "longterm" && currentCount > 0 && progressHistory.length === 0) {
+              progressHistory = [{
+                id: `migration-${task.id ?? "cumulative"}`,
+                timestamp: yesterdayTimestamp,
+                amount: currentCount,
+                total: currentCount,
+                kind: "starting",
+              }];
+              migratedProgressHistory = true;
+            }
+
+            return {
+              id: task.id ?? Date.now() + Math.random(),
+              name: task.name ?? "",
+              category: task.category ?? "",
+              dailyGoal: task.dailyGoal ?? "",
+              dailyPoints: task.dailyPoints ?? 0,
+              extraThreshold: task.extraThreshold ?? "",
+              extraBonus: task.extraBonus ?? 0,
+              weeklyGoal: task.weeklyGoal ?? 0,
+              weeklyBonus: task.weeklyBonus ?? 0,
+              type,
+              targetCount: task.targetCount ?? 0,
+              currentCount,
+              unitLabel: task.unitLabel ?? "",
+              reward: task.reward ?? "",
+              progressHistory,
+              active: task.active ?? true,
+            };
+          });
+
+          setTasks(loadedTasks);
+          if (migratedProgressHistory) {
+            await setDoc(doc(db, "users", user.uid), { tasks: loadedTasks }, { merge: true });
+          }
         } else {
           setTasks(defaultTasks);
         }
@@ -1997,34 +2024,48 @@ function App() {
                   return (
                     <div key={task.id}>
                       <div className={`longterm-card ${isComplete ? "is-complete" : ""} ${detailsExpanded ? "is-expanded" : ""}`}>
-                        <button
-                          className="longterm-mobile-summary"
-                          type="button"
-                          aria-expanded={detailsExpanded}
-                          aria-controls={`longterm-details-${task.id}`}
-                          onClick={() => {
-                            setExpandedLongTermTasks((prev) => ({ ...prev, [task.id]: !prev[task.id] }));
-                            if (detailsExpanded) {
-                              setExpandedLongTermHistory((prev) => ({ ...prev, [task.id]: false }));
-                            }
-                          }}
-                        >
-                          <span className="longterm-mobile-title">{task.name}</span>
-                          <span
-                            className="longterm-mobile-progress-wrap"
-                            role="progressbar"
-                            aria-label={`${task.name} progress`}
-                            aria-valuemin={0}
-                            aria-valuemax={targetCount}
-                            aria-valuenow={Math.min(currentCount, targetCount)}
-                            aria-valuetext={`${currentCount.toLocaleString()} of ${targetCount.toLocaleString()} ${task.unitLabel || "total"}`}
+                        <div className="longterm-mobile-summary-row">
+                          <button
+                            className="longterm-mobile-summary"
+                            type="button"
+                            aria-expanded={detailsExpanded}
+                            aria-controls={`longterm-details-${task.id}`}
+                            onClick={() => {
+                              setExpandedLongTermTasks((prev) => ({ ...prev, [task.id]: !prev[task.id] }));
+                              if (detailsExpanded) {
+                                setExpandedLongTermHistory((prev) => ({ ...prev, [task.id]: false }));
+                              }
+                            }}
                           >
+                            <span className="longterm-mobile-title">{task.name}</span>
                             <span
-                              className="longterm-progress-bar"
-                              style={{ width: `${progressWidthPercent}%`, minWidth: currentCount > 0 ? "4px" : 0 }}
-                            />
-                          </span>
-                        </button>
+                              className="longterm-mobile-progress-wrap"
+                              role="progressbar"
+                              aria-label={`${task.name} progress`}
+                              aria-valuemin={0}
+                              aria-valuemax={targetCount}
+                              aria-valuenow={Math.min(currentCount, targetCount)}
+                              aria-valuetext={`${currentCount.toLocaleString()} of ${targetCount.toLocaleString()} ${task.unitLabel || "total"}`}
+                            >
+                              <span
+                                className="longterm-progress-bar"
+                                style={{ width: `${progressWidthPercent}%`, minWidth: currentCount > 0 ? "4px" : 0 }}
+                              />
+                            </span>
+                          </button>
+                          <button
+                            className="longterm-history-shortcut"
+                            type="button"
+                            aria-expanded={historyExpanded}
+                            aria-controls={`longterm-history-${task.id}`}
+                            onClick={() => {
+                              setExpandedLongTermTasks((prev) => ({ ...prev, [task.id]: true }));
+                              setExpandedLongTermHistory((prev) => ({ ...prev, [task.id]: !prev[task.id] }));
+                            }}
+                          >
+                            History
+                          </button>
+                        </div>
 
                         <div id={`longterm-details-${task.id}`} className="longterm-detail-panel">
                           <div className="longterm-card-header">
