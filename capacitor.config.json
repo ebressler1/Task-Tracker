@@ -1,0 +1,9 @@
+{
+  "appId": "com.ebressler.tasktracker",
+  "appName": "Task Tracker",
+  "webDir": "dist-ios",
+  "ios": {
+    "contentInset": "always",
+    "initialFocus": false
+  }
+}

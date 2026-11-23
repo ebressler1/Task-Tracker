@@ -1610,6 +1610,13 @@ body.theme-graphite .timeline-item {
   margin: 0 auto;
 }
 
+.auth-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
