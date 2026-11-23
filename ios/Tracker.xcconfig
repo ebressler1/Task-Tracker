@@ -1,0 +1,5 @@
+TRACKER_APP_GROUP = group.com.ebressler.tasktracker
+GOOGLE_IOS_CLIENT_ID =
+GOOGLE_IOS_URL_SCHEME = com.ebressler.tasktracker.google-unconfigured
+
+#include? "Tracker.local.xcconfig"
