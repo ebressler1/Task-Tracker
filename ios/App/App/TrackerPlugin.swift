@@ -6,7 +6,7 @@ import WidgetKit
 final class TrackerPlugin: CAPPlugin, CAPBridgedPlugin {
     let identifier = "TrackerPlugin"
     let jsName = "TaskTracker"
-    let pluginMethods = [
+    let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "signIn", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setProgress", returnType: CAPPluginReturnPromise),
