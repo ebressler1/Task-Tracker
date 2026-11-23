@@ -3,6 +3,7 @@
   "appName": "Task Tracker",
   "webDir": "dist-ios",
   "ios": {
-    "contentInset": "always"
+    "contentInset": "always",
+    "initialFocus": false
   }
 }
