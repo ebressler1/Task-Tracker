@@ -346,7 +346,9 @@ const BADGES = [
 function App() {
   const [user, setUser] = useState(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [dataLoading, setDataLoading] = useState(false);
+  const [authLoadError, setAuthLoadError] = useState(false);
+  const [dataLoadError, setDataLoadError] = useState("");
+  const [loadAttempt, setLoadAttempt] = useState(0);
   const [loadedUserId, setLoadedUserId] = useState(null);
   const [signInError, setSignInError] = useState("");
   const [signingIn, setSigningIn] = useState(false);
@@ -400,19 +402,31 @@ function App() {
 
   // Auth state listener
   useEffect(() => {
+    const timeout = setTimeout(() => setAuthLoadError(true), 15_000);
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      clearTimeout(timeout);
       setUser(firebaseUser);
       setAuthLoading(false);
-      if (!firebaseUser) dataLoaded.current = false;
+      if (!firebaseUser) {
+        dataLoaded.current = false;
+        setLoadedUserId(null);
+        setDataLoadError("");
+      }
     });
-    return unsubscribe;
+    return () => {
+      clearTimeout(timeout);
+      unsubscribe();
+    };
   }, []);
 
   // Load data from Firestore when user logs in
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
-    setDataLoading(true);
+    const timeout = setTimeout(() => {
+      cancelled = true;
+      setDataLoadError("Loading your tasks took too long. Check your connection and try again.");
+    }, 15_000);
     const load = async () => {
       const snap = await getDoc(doc(db, "users", user.uid));
       if (cancelled) return;
@@ -422,7 +436,6 @@ function App() {
           const yesterday = new Date();
           yesterday.setDate(yesterday.getDate() - 1);
           const yesterdayTimestamp = yesterday.toISOString();
-          let migratedProgressHistory = false;
 
           const loadedTasks = data.tasks.map((task) => {
             const type = task.type ?? "weekly";
@@ -439,7 +452,6 @@ function App() {
                 total: currentCount,
                 kind: "starting",
               }];
-              migratedProgressHistory = true;
             }
 
             return {
@@ -463,10 +475,6 @@ function App() {
           });
 
           setTasks(loadedTasks);
-          if (migratedProgressHistory) {
-            await setDoc(doc(db, "users", user.uid), { tasks: loadedTasks }, { merge: true });
-            if (cancelled) return;
-          }
         } else {
           setTasks(defaultTasks);
         }
@@ -484,11 +492,19 @@ function App() {
       }
       dataLoaded.current = true;
       setLoadedUserId(user.uid);
-      setDataLoading(false);
     };
-    load();
-    return () => { cancelled = true; };
-  }, [user]);
+    load().catch((error) => {
+      if (cancelled) return;
+      console.warn("Task Tracker could not load tasks", error.code ?? "unknown");
+      setDataLoadError(error.code === "permission-denied"
+        ? "This account doesn't have access to the saved tasks."
+        : "Your tasks couldn't be loaded. Check your connection and try again.");
+    }).finally(() => clearTimeout(timeout));
+    return () => {
+      cancelled = true;
+      clearTimeout(timeout);
+    };
+  }, [user, loadAttempt]);
 
   useProgressWidget({ authLoading, userId: user?.uid, loadedUserId, tasks, logs });
 
@@ -1827,7 +1843,17 @@ function App() {
     return (
       <div className="auth-screen">
         <div className="auth-card">
-          <div className="auth-spinner" />
+          {authLoadError ? (
+            <>
+              <p role="alert">Task Tracker couldn't reconnect to your account.</p>
+              <button type="button" className="small-button" onClick={() => window.location.reload()}>Try Again</button>
+            </>
+          ) : (
+            <>
+              <div className="auth-spinner" aria-hidden="true" />
+              <p role="status">Connecting to your account...</p>
+            </>
+          )}
         </div>
       </div>
     );
@@ -1853,12 +1879,27 @@ function App() {
     );
   }
 
-  if (dataLoading) {
+  if (loadedUserId !== user.uid) {
     return (
       <div className="auth-screen">
         <div className="auth-card">
-          <div className="auth-spinner" />
-          <p className="subtitle" style={{marginTop: 16}}>Loading your data...</p>
+          {dataLoadError ? (
+            <>
+              <p role="alert">{dataLoadError}</p>
+              <div className="auth-recovery-actions">
+                <button type="button" className="small-button" onClick={() => {
+                  setDataLoadError("");
+                  setLoadAttempt(attempt => attempt + 1);
+                }}>Try Again</button>
+                <button type="button" className="text-button" onClick={handleSignOut}>Sign Out</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="auth-spinner" aria-hidden="true" />
+              <p role="status">Loading your tasks...</p>
+            </>
+          )}
         </div>
       </div>
     );
